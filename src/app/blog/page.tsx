@@ -8,47 +8,18 @@ import { Container, Badge, SplitText } from '@/components/ui'
 const blogPosts = [
   {
     id: 1,
-    title: 'Die Zukunft der Lichtmessung: Autonome Roboter im Einsatz',
-    excerpt: 'Wie autonome Messroboter die Beleuchtungsmessung revolutionieren und welche Vorteile sie gegenüber manuellen Verfahren bieten.',
-    category: 'Technologie',
-    date: '12. Januar 2025',
-    readTime: '5 min',
-    author: 'Dr. Thomas Petry',
-    image: '/Bilder/iloveimg-compressed/Gemini_Generated_Image_2xr9np2xr9np2xr9.png',
-  },
-  {
-    id: 2,
-    title: 'DIN EN 12193: Normgerechte Sportstättenbeleuchtung',
-    excerpt: 'Ein Überblick über die Anforderungen der DIN EN 12193 und wie der MR-1 bei der Einhaltung unterstützt.',
-    category: 'Normen',
-    date: '8. Januar 2025',
-    readTime: '7 min',
-    author: 'Dr. Thomas Petry',
-    image: '/Bilder/iloveimg-compressed/Gemini_Generated_Image_rkbqzyrkbqzyrkbq.png',
-  },
-  {
-    id: 3,
-    title: 'Case Study: Beleuchtungsmessung im Olympiastadion',
-    excerpt: 'Wie wir mit dem MR-1 die komplette Beleuchtungsanlage des Olympiastadions in nur 4 Stunden vermessen haben.',
-    category: 'Case Study',
-    date: '3. Januar 2025',
-    readTime: '4 min',
-    author: 'Max Petry',
-    image: '/Bilder/iloveimg-compressed/Gemini_Generated_Image_4rgybp4rgybp4rgy.png',
-  },
-  {
-    id: 4,
-    title: 'Arbeitsschutz: Beleuchtung am Arbeitsplatz nach ASR A3.4',
-    excerpt: 'Die wichtigsten Anforderungen an die Arbeitsplatzbeleuchtung und wie regelmäßige Messungen zur Einhaltung beitragen.',
-    category: 'Arbeitsschutz',
-    date: '28. Dezember 2024',
-    readTime: '6 min',
-    author: 'Dr. Thomas Petry',
-    image: '/Bilder/iloveimg-compressed/Gemini_Generated_Image_2xr9np2xr9np2xr9.png',
+    slug: 'messroboter-mr1-vorstellung',
+    title: 'Der MR-1: Unser autonomer Messroboter im Detail',
+    excerpt: 'Lernen Sie den MR-1 kennen - unseren autonomen Messroboter für professionelle Beleuchtungsmessungen. Erfahren Sie alles über Technik, Einsatzgebiete und Vorteile.',
+    category: 'Produkt',
+    date: '15. Januar 2025',
+    readTime: '8 min',
+    author: 'IB Dr. Petry',
+    image: '/Bilder/iloveimg-compressed/Gemini_Generated_Image_zhdezazhdezazhde.png',
   },
 ]
 
-const categories = ['Alle', 'Technologie', 'Normen', 'Case Study', 'Arbeitsschutz']
+const categories = ['Alle', 'Produkt', 'Technologie', 'Normen']
 
 export default function BlogPage() {
   return (
@@ -112,78 +83,79 @@ export default function BlogPage() {
         <Container size="wide">
           <div className="grid md:grid-cols-2 gap-6">
             {blogPosts.map((post, index) => (
-              <motion.article
-                key={post.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 + index * 0.1 }}
-                className="group relative p-[1px] rounded-2xl overflow-hidden"
-                style={{ isolation: 'isolate' }}
-              >
-                {/* Gradient Border on Hover */}
-                <div
-                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                  style={{
-                    background: 'linear-gradient(135deg, var(--accent-primary) 0%, transparent 50%, var(--accent-secondary) 100%)',
-                  }}
-                />
+              <Link key={post.id} href={`/blog/${post.slug}`}>
+                <motion.article
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 + index * 0.1 }}
+                  className="group relative p-[1px] rounded-2xl overflow-hidden h-full cursor-pointer"
+                  style={{ isolation: 'isolate' }}
+                >
+                  {/* Gradient Border on Hover */}
+                  <div
+                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                    style={{
+                      background: 'linear-gradient(135deg, var(--accent-primary) 0%, transparent 50%, var(--accent-secondary) 100%)',
+                    }}
+                  />
 
-                <div className="relative z-10 bg-[var(--theme-surface)] rounded-2xl overflow-hidden h-full">
-                  {/* Image */}
-                  <div className="relative h-48 overflow-hidden">
-                    <img
-                      src={post.image}
-                      alt={post.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute top-4 left-4">
-                      <span
-                        className="px-3 py-1 rounded-full text-xs font-medium text-white"
-                        style={{
-                          background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))',
-                        }}
-                      >
-                        {post.category}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Content */}
-                  <div className="p-6">
-                    <div className="flex items-center gap-4 text-sm text-[var(--theme-textSecondary)] mb-3">
-                      <span className="flex items-center gap-1">
-                        <Calendar size={14} />
-                        {post.date}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Clock size={14} />
-                        {post.readTime}
-                      </span>
+                  <div className="relative z-10 bg-[var(--theme-surface)] rounded-2xl overflow-hidden h-full">
+                    {/* Image */}
+                    <div className="relative h-48 overflow-hidden">
+                      <img
+                        src={post.image}
+                        alt={post.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <div className="absolute top-4 left-4">
+                        <span
+                          className="px-3 py-1 rounded-full text-xs font-medium text-white"
+                          style={{
+                            background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))',
+                          }}
+                        >
+                          {post.category}
+                        </span>
+                      </div>
                     </div>
 
-                    <h2 className="text-xl font-semibold text-[var(--theme-text)] mb-3 group-hover:text-[var(--accent-primary)] transition-colors">
-                      {post.title}
-                    </h2>
-
-                    <p className="text-[var(--theme-textSecondary)] mb-4 line-clamp-2">
-                      {post.excerpt}
-                    </p>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-secondary)] flex items-center justify-center text-white text-xs font-semibold">
-                          {post.author.split(' ').map(n => n[0]).join('')}
-                        </div>
-                        <span className="text-sm text-[var(--theme-textSecondary)]">{post.author}</span>
+                    {/* Content */}
+                    <div className="p-6">
+                      <div className="flex items-center gap-4 text-sm text-[var(--theme-textSecondary)] mb-3">
+                        <span className="flex items-center gap-1">
+                          <Calendar size={14} />
+                          {post.date}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock size={14} />
+                          {post.readTime}
+                        </span>
                       </div>
 
-                      <span className="flex items-center gap-1 text-[var(--accent-primary)] text-sm font-medium group-hover:gap-2 transition-all">
-                        Lesen <ArrowRight size={16} />
-                      </span>
+                      <h2 className="text-xl font-semibold text-[var(--theme-text)] mb-3 group-hover:text-[var(--accent-primary)] transition-colors">
+                        {post.title}
+                      </h2>
+
+                      <p className="text-[var(--theme-textSecondary)] mb-4 line-clamp-2">
+                        {post.excerpt}
+                      </p>
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-secondary)] flex items-center justify-center text-white text-xs font-semibold">
+                            {post.author.split(' ').map(n => n[0]).join('')}
+                          </div>
+                          <span className="text-sm text-[var(--theme-textSecondary)]">{post.author}</span>
+                        </div>
+
+                        <span className="flex items-center gap-1 text-[var(--accent-primary)] text-sm font-medium group-hover:gap-2 transition-all">
+                          Lesen <ArrowRight size={16} />
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </motion.article>
+                </motion.article>
+              </Link>
             ))}
           </div>
 
