@@ -1,9 +1,9 @@
 export const siteConfig = {
-  name: 'IB Dr. Petry Robotik',
+  name: 'Petry Robotik',
   description: 'Professionelle Lichtmessung mit autonomen Messrobotern. Hochpräzise Daten, vollautomatisch erfasst.',
   url: 'https://robotik.ib-drpetry.de',
   company: {
-    name: 'Ingenieurbüro Dr. Petry',
+    name: 'Petry Robotik',
     address: 'Musterstraße 1, 12345 Musterstadt',
     email: 'robotik@ib-drpetry.de',
     phone: '+49 123 456789'
@@ -17,6 +17,7 @@ export const siteConfig = {
     { name: 'Dashboard', href: '/dashboard' },
     { name: 'Blog', href: '/blog' },
     { name: 'Kontakt', href: '/kontakt' },
+    { name: 'Login', href: '/login' },
   ]
 }
 

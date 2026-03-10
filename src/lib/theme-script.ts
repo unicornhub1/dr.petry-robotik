@@ -1,7 +1,7 @@
 // This script runs before React hydration to prevent flash of wrong theme
 export const themeScript = `
 (function() {
-  const STORAGE_KEY = 'ib-drpetry-theme';
+  const STORAGE_KEY = 'petry-robotik-theme';
   const stored = localStorage.getItem(STORAGE_KEY);
 
   if (stored === 'light') {
