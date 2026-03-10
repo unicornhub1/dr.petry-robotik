@@ -5,6 +5,7 @@ import { ThemeProvider } from '@/lib/theme-context'
 import { themeScript } from '@/lib/theme-script'
 import { LayoutWrapper } from '@/components/layout'
 import { siteConfig } from '@/lib/config'
+import { AuthProvider } from '@/lib/auth/auth-context'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -68,7 +69,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}
       >
         <ThemeProvider>
-          <LayoutWrapper>{children}</LayoutWrapper>
+          <AuthProvider>
+            <LayoutWrapper>{children}</LayoutWrapper>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
