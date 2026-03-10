@@ -9,9 +9,13 @@ export default function LayoutWrapper({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
-  const isDashboard = pathname?.startsWith('/dashboard')
+  const isShell =
+    pathname?.startsWith('/dashboard') ||
+    pathname?.startsWith('/admin') ||
+    pathname?.startsWith('/login') ||
+    pathname?.startsWith('/onboarding')
 
-  if (isDashboard) {
+  if (isShell) {
     return <>{children}</>
   }
 

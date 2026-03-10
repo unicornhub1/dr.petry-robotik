@@ -1,3 +1,7 @@
 export { default as Header } from './Header'
 export { default as Footer } from './Footer'
 export { default as LayoutWrapper } from './LayoutWrapper'
+export { default as Sidebar } from './Sidebar'
+export type { SidebarItem } from './Sidebar'
+export { default as DashboardShell } from './DashboardShell'
+export { default as AdminShell } from './AdminShell'
