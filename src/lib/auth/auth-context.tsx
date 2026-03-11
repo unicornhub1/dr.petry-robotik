@@ -1,7 +1,7 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from 'react'
-import type { User } from '@supabase/supabase-js'
+import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react'
+import type { User, Session } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/lib/supabase/types'
 
@@ -21,70 +21,90 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const initialized = useRef(false)
 
-  const fetchProfile = useCallback(async (userId: string) => {
-    const supabase = createClient()
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single()
+  const loadProfile = useCallback(async (userId: string) => {
+    try {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
 
-    if (error) {
-      console.error('Error fetching profile:', error.message, error.code, error.details)
+      if (error) {
+        if (error.code !== 'PGRST116') {
+          console.error('Error fetching profile:', error.message, error.code)
+        }
+        setProfile(null)
+      } else {
+        setProfile(data as unknown as Profile)
+      }
+    } catch {
       setProfile(null)
-    } else {
-      setProfile(data as unknown as Profile)
     }
   }, [])
 
   const refreshProfile = useCallback(async () => {
     if (user) {
-      await fetchProfile(user.id)
+      await loadProfile(user.id)
     }
-  }, [user, fetchProfile])
+  }, [user, loadProfile])
 
+  // Main auth initialization
   useEffect(() => {
-    if (initialized.current) return
-    initialized.current = true
-
     const supabase = createClient()
+    let loadingTimeout: NodeJS.Timeout
 
-    // Use getUser() for secure server-verified session
-    const initAuth = async () => {
+    const getInitialSession = async () => {
+      // Safety timeout: stop loading after 5s max
+      loadingTimeout = setTimeout(() => {
+        setIsLoading(false)
+      }, 5000)
+
       try {
-        const { data: { user: authUser } } = await supabase.auth.getUser()
-        setUser(authUser)
-        if (authUser) {
-          await fetchProfile(authUser.id)
+        // getSession() reads from local storage = instant, no server call
+        const { data: { session }, error } = await supabase.auth.getSession()
+
+        clearTimeout(loadingTimeout)
+
+        if (error) {
+          setUser(null)
+          setProfile(null)
+          setIsLoading(false)
+          return
+        }
+
+        setUser(session?.user ?? null)
+        // Stop loading IMMEDIATELY - profile loads in background
+        setIsLoading(false)
+
+        if (session?.user) {
+          // Load profile in background without blocking UI
+          loadProfile(session.user.id)
         }
       } catch {
+        clearTimeout(loadingTimeout)
         setUser(null)
         setProfile(null)
-      } finally {
         setIsLoading(false)
       }
     }
 
-    initAuth()
+    getInitialSession()
 
-    // Listen for auth state changes (login, logout, token refresh)
+    // Listen for auth changes
+    // WICHTIG: Keine async Supabase-Calls in onAuthStateChange um Deadlock zu vermeiden!
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event: string, session: Session | null) => {
         if (event === 'SIGNED_OUT') {
           setUser(null)
           setProfile(null)
           return
         }
 
-        if (session?.user) {
-          setUser(session.user)
-
-          // Only fetch profile on initial sign-in or token refresh
-          if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
-            await fetchProfile(session.user.id)
-          }
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
+          setUser(session?.user ?? null)
+          // Profile wird im separaten useEffect geladen
         }
 
         setIsLoading(false)
@@ -92,46 +112,68 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     )
 
     return () => {
+      clearTimeout(loadingTimeout)
       subscription.unsubscribe()
     }
-  }, [fetchProfile])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Refresh session when tab becomes visible again
+  // Separater useEffect: Profile laden wenn User sich ändert
   useEffect(() => {
-    let refreshing = false
+    if (user && !profile) {
+      loadProfile(user.id)
+    }
+  }, [user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Tab-Wechsel: Session refreshen mit refreshSession() (schneller als getUser())
+  useEffect(() => {
+    let isRefreshing = false
+    const supabase = createClient()
 
     const handleVisibilityChange = async () => {
-      if (document.visibilityState !== 'visible' || refreshing) return
-      refreshing = true
+      if (document.visibilityState !== 'visible' || isRefreshing) return
+      isRefreshing = true
 
       try {
-        const supabase = createClient()
-        const { data: { user: refreshedUser }, error } = await supabase.auth.getUser()
+        // refreshSession() erneuert den Token ohne vollen Server-Roundtrip
+        const { error } = await supabase.auth.refreshSession()
 
-        if (error || !refreshedUser) {
-          if (user) {
-            setUser(null)
-            setProfile(null)
-          }
-          return
+        if (error) {
+          // Fallback: getUser() für Verifizierung
+          await supabase.auth.getUser().catch(() => null)
         }
-
-        setUser(refreshedUser)
-        await fetchProfile(refreshedUser.id)
       } finally {
-        refreshing = false
+        isRefreshing = false
+      }
+    }
+
+    // Auch bei focus-Event (Backup für visibilitychange)
+    const handleFocus = async () => {
+      if (isRefreshing) return
+      isRefreshing = true
+
+      try {
+        await supabase.auth.getSession().catch(() => null)
+      } finally {
+        isRefreshing = false
       }
     }
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
-  }, [user, fetchProfile])
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [])
 
   const signOut = async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
     setUser(null)
     setProfile(null)
+    setIsLoading(false)
+
+    const supabase = createClient()
+    await supabase.auth.signOut()
   }
 
   const isApproved = profile?.is_approved ?? false

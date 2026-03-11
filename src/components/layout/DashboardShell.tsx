@@ -38,8 +38,8 @@ export default function DashboardShell({ children }: { children: React.ReactNode
   const router = useRouter()
   const pathname = usePathname()
 
-  // Only show restriction AFTER auth is fully loaded - prevents flash
-  const isRestricted = !isLoading && !isApproved && RESTRICTED_PATHS.some((p) => pathname.startsWith(p))
+  // Only show restriction AFTER profile is loaded - prevents flash
+  const isRestricted = !isLoading && profile !== null && !isApproved && RESTRICTED_PATHS.some((p) => pathname.startsWith(p))
 
   const handleSignOut = async () => {
     await signOut()
@@ -61,7 +61,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
           <div className="flex items-center justify-between h-full px-4 lg:px-6">
             {/* Left: pending approval badge */}
             <div className="flex items-center gap-3">
-              {!isLoading && !isApproved && (
+              {!isLoading && profile !== null && !isApproved && (
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
                   <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
                   <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
