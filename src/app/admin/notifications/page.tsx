@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Send, Search, MessageSquare, Clock, Users as UsersIcon, User, ArrowRight } from 'lucide-react'
+import { Send, Search, MessageSquare, ArrowLeft } from 'lucide-react'
 import { Input, Textarea, Dropdown, EmptyState, useToast } from '@/components/ui'
+import ChatWindow from '@/components/chat/ChatWindow'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/lib/supabase/types'
 
@@ -15,14 +15,12 @@ interface OrderChat {
   order_id: string
   order_number: string
   customer_name: string
-  customer_email: string
   last_message: string
   last_message_at: string
   unread_count: number
 }
 
 export default function AdminNotificationsPage() {
-  const router = useRouter()
   const { success, error: toastError } = useToast()
   const [activeTab, setActiveTab] = useState<Tab>('chats')
 
@@ -39,8 +37,8 @@ export default function AdminNotificationsPage() {
   // Chats
   const [chats, setChats] = useState<OrderChat[]>([])
   const [chatsLoading, setChatsLoading] = useState(true)
+  const [selectedChat, setSelectedChat] = useState<OrderChat | null>(null)
 
-  // Fetch users for send form
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -57,21 +55,18 @@ export default function AdminNotificationsPage() {
         console.error('Failed to fetch users:', err)
       }
     }
-
     fetchUsers()
   }, [])
 
-  // Fetch active chats
   useEffect(() => {
     const fetchChats = async () => {
       setChatsLoading(true)
       try {
         const supabase = createClient()
 
-        // Get all orders that have messages, with latest message info
         const { data: messages } = await supabase
           .from('messages')
-          .select('order_id, content, created_at, sender_id, admin_read_at, orders!inner(order_number, user_id, profiles!inner(first_name, last_name, email))')
+          .select('order_id, content, created_at, sender_id, admin_read_at, orders!inner(order_number, user_id, profiles!inner(first_name, last_name))')
           .order('created_at', { ascending: false })
 
         if (!messages || messages.length === 0) {
@@ -80,7 +75,6 @@ export default function AdminNotificationsPage() {
           return
         }
 
-        // Group by order_id, take latest message per order
         const chatMap = new Map<string, OrderChat>()
 
         for (const msg of messages as unknown as Array<{
@@ -92,7 +86,7 @@ export default function AdminNotificationsPage() {
           orders: {
             order_number: string
             user_id: string
-            profiles: { first_name: string; last_name: string; email: string }
+            profiles: { first_name: string; last_name: string }
           }
         }>) {
           const existing = chatMap.get(msg.order_id)
@@ -102,20 +96,17 @@ export default function AdminNotificationsPage() {
               order_id: msg.order_id,
               order_number: msg.orders.order_number,
               customer_name: `${msg.orders.profiles.first_name} ${msg.orders.profiles.last_name}`,
-              customer_email: msg.orders.profiles.email,
               last_message: msg.content,
               last_message_at: msg.created_at,
               unread_count: (!msg.admin_read_at && msg.sender_id === msg.orders.user_id) ? 1 : 0,
             })
           } else {
-            // Count unread (messages from customer that admin hasn't read)
             if (!msg.admin_read_at && msg.sender_id === msg.orders.user_id) {
               existing.unread_count++
             }
           }
         }
 
-        // Sort by latest message
         const sorted = Array.from(chatMap.values()).sort(
           (a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime()
         )
@@ -127,7 +118,6 @@ export default function AdminNotificationsPage() {
         setChatsLoading(false)
       }
     }
-
     fetchChats()
   }, [])
 
@@ -152,7 +142,6 @@ export default function AdminNotificationsPage() {
       toastError('Bitte Titel eingeben')
       return
     }
-
     if (recipientMode === 'single' && !selectedUserId) {
       toastError('Bitte einen Empfänger auswählen')
       return
@@ -209,11 +198,11 @@ export default function AdminNotificationsPage() {
     const diffHours = Math.floor(diffMs / 3600000)
     const diffDays = Math.floor(diffMs / 86400000)
 
-    if (diffMins < 1) return 'Gerade eben'
-    if (diffMins < 60) return `vor ${diffMins} Min.`
-    if (diffHours < 24) return `vor ${diffHours} Std.`
-    if (diffDays < 7) return `vor ${diffDays} Tagen`
-    return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    if (diffMins < 1) return 'Jetzt'
+    if (diffMins < 60) return `${diffMins} Min.`
+    if (diffHours < 24) return `${diffHours} Std.`
+    if (diffDays < 7) return `${diffDays} T.`
+    return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })
   }
 
   return (
@@ -233,7 +222,7 @@ export default function AdminNotificationsPage() {
         ]).map((tab) => (
           <button
             key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => { setActiveTab(tab.key); setSelectedChat(null) }}
             className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               activeTab === tab.key
                 ? 'bg-[var(--accent-primary)] text-white'
@@ -254,66 +243,118 @@ export default function AdminNotificationsPage() {
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="max-w-2xl space-y-2"
+          className="bg-[var(--theme-surface)] rounded-2xl border border-[var(--theme-border)] overflow-hidden"
+          style={{ height: 'calc(100vh - 260px)', minHeight: '500px' }}
         >
-          {chatsLoading ? (
-            <div className="space-y-2">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-20 bg-[var(--theme-surface)] rounded-2xl animate-pulse" />
-              ))}
-            </div>
-          ) : chats.length === 0 ? (
-            <EmptyState
-              icon={MessageSquare}
-              title="Keine Chats"
-              description="Noch keine Nachrichten von Kunden erhalten."
-            />
-          ) : (
-            chats.map((chat, i) => (
-              <motion.div
-                key={chat.order_id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.03 }}
-              >
-                <button
-                  onClick={() => router.push(`/admin/orders/${chat.order_id}`)}
-                  className={`w-full text-left p-4 rounded-2xl border transition-colors ${
-                    chat.unread_count > 0
-                      ? 'bg-[var(--accent-primary)]/5 border-[var(--accent-primary)]/20 hover:border-[var(--accent-primary)]/40'
-                      : 'bg-[var(--theme-surface)] border-[var(--theme-border)] hover:border-[var(--accent-primary)]/30'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        {chat.unread_count > 0 && (
-                          <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-[var(--accent-primary)] text-white text-[10px] font-semibold">
-                            {chat.unread_count}
-                          </span>
-                        )}
-                        <span className="text-sm font-semibold text-[var(--theme-text)] truncate">
-                          {chat.customer_name}
-                        </span>
-                        <span className="text-xs text-[var(--accent-primary)] font-medium">
-                          {chat.order_number}
-                        </span>
-                      </div>
-                      <p className="text-sm text-[var(--theme-textSecondary)] truncate">
-                        {chat.last_message}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-xs text-[var(--theme-textTertiary)]">
-                        {formatTime(chat.last_message_at)}
-                      </span>
-                      <ArrowRight size={14} className="text-[var(--theme-textTertiary)]" />
+          <div className="flex h-full">
+            {/* Chat List - Left */}
+            <div className={`${selectedChat ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-80 lg:w-96 border-r border-[var(--theme-border)] shrink-0`}>
+              <div className="p-3 border-b border-[var(--theme-border)]">
+                <p className="text-xs font-semibold text-[var(--theme-textTertiary)] uppercase tracking-wider">
+                  {chats.length} {chats.length === 1 ? 'Chat' : 'Chats'}
+                </p>
+              </div>
+              <div className="flex-1 overflow-y-auto">
+                {chatsLoading ? (
+                  <div className="p-3 space-y-2">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="h-16 bg-[var(--theme-background)] rounded-xl animate-pulse" />
+                    ))}
+                  </div>
+                ) : chats.length === 0 ? (
+                  <div className="flex items-center justify-center h-full px-4">
+                    <div className="text-center">
+                      <MessageSquare size={24} className="mx-auto mb-2 text-[var(--theme-textTertiary)]" />
+                      <p className="text-sm text-[var(--theme-textTertiary)]">Keine Chats</p>
                     </div>
                   </div>
-                </button>
-              </motion.div>
-            ))
-          )}
+                ) : (
+                  <div className="p-2 space-y-0.5">
+                    {chats.map((chat) => (
+                      <button
+                        key={chat.order_id}
+                        onClick={() => setSelectedChat(chat)}
+                        className={`w-full text-left px-3 py-3 rounded-xl transition-colors ${
+                          selectedChat?.order_id === chat.order_id
+                            ? 'bg-[var(--accent-primary)]/10'
+                            : 'hover:bg-[var(--theme-background)]'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-0.5">
+                          <span className={`text-sm font-semibold truncate ${
+                            chat.unread_count > 0 ? 'text-[var(--theme-text)]' : 'text-[var(--theme-text)]'
+                          }`}>
+                            {chat.customer_name}
+                          </span>
+                          <span className="text-[10px] text-[var(--theme-textTertiary)] shrink-0">
+                            {formatTime(chat.last_message_at)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-xs truncate ${
+                              chat.unread_count > 0
+                                ? 'text-[var(--theme-text)] font-medium'
+                                : 'text-[var(--theme-textSecondary)]'
+                            }`}>
+                              {chat.last_message}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className="text-[10px] text-[var(--accent-primary)] font-medium">
+                              {chat.order_number}
+                            </span>
+                            {chat.unread_count > 0 && (
+                              <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--accent-primary)] text-white text-[10px] font-semibold">
+                                {chat.unread_count}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Chat Window - Right */}
+            <div className={`${selectedChat ? 'flex' : 'hidden md:flex'} flex-col flex-1 min-w-0`}>
+              {selectedChat ? (
+                <>
+                  {/* Mobile back button */}
+                  <div className="md:hidden flex items-center gap-2 px-3 py-2 border-b border-[var(--theme-border)]">
+                    <button
+                      onClick={() => setSelectedChat(null)}
+                      className="p-1.5 rounded-lg text-[var(--theme-textSecondary)] hover:bg-[var(--theme-background)] transition-colors"
+                    >
+                      <ArrowLeft size={18} />
+                    </button>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-[var(--theme-text)] truncate">
+                        {selectedChat.customer_name}
+                      </p>
+                      <p className="text-[10px] text-[var(--accent-primary)]">
+                        {selectedChat.order_number}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex-1 min-h-0">
+                    <ChatWindow orderId={selectedChat.order_id} />
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center px-6">
+                    <MessageSquare size={32} className="mx-auto mb-3 text-[var(--theme-textTertiary)]" />
+                    <p className="text-sm text-[var(--theme-textTertiary)]">
+                      Chat auswählen um die Konversation zu sehen
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </motion.div>
       )}
 
