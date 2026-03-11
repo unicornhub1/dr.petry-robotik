@@ -30,7 +30,7 @@ export async function onUserRegistered(userId: string) {
   for (const admin of admins ?? []) {
     await sendTemplateEmail({
       to: admin.email,
-      templateKey: 'admin_new_registration',
+      templateKey: 'admin_new_user',
       variables: {
         user_name: fullName || 'Neuer Nutzer',
         user_email: profile.email,
@@ -126,7 +126,7 @@ export async function onOrderReceived(orderId: string) {
   for (const admin of admins ?? []) {
     await sendTemplateEmail({
       to: admin.email,
-      templateKey: 'admin_new_order',
+      templateKey: 'order_received',
       variables: {
         order_number: order.order_number || orderId,
         user_name: fullName || 'Kunde',
@@ -349,7 +349,7 @@ export async function onIndividualRequest(orderId: string) {
   for (const admin of admins ?? []) {
     await sendTemplateEmail({
       to: admin.email,
-      templateKey: 'admin_individual_request',
+      templateKey: 'individual_request',
       variables: {
         order_number: order.order_number || orderId,
         user_name: fullName || 'Kunde',
