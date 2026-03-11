@@ -161,9 +161,9 @@ export default function ChatWindow({ orderId, userRole = 'customer' }: ChatWindo
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-[var(--theme-surface)] rounded-2xl border border-[var(--theme-border)] overflow-hidden">
       {/* Header */}
-      <div className="hidden md:flex items-center gap-2 px-4 py-3 border-b border-[var(--theme-border)] bg-[var(--theme-surface)]">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--theme-border)] bg-[var(--theme-surface)]">
         <ClipboardList size={16} className="text-[var(--accent-primary)]" />
         <h3 className="text-sm font-semibold text-[var(--theme-text)]">Auftragschat</h3>
         <span className="text-[10px] font-medium text-[var(--accent-primary)] bg-[var(--accent-primary)]/10 px-2 py-0.5 rounded-full">
@@ -172,7 +172,7 @@ export default function ChatWindow({ orderId, userRole = 'customer' }: ChatWindo
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 min-h-0">
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 min-h-0 bg-[var(--theme-background)]">
         {messages.length === 0 && (
           <div className="flex items-center justify-center h-full">
             <p className="text-sm text-[var(--theme-textTertiary)]">
