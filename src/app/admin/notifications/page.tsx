@@ -1,26 +1,32 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Send, Search, Clock, Users as UsersIcon, User } from 'lucide-react'
+import { Send, Search, MessageSquare, Clock, Users as UsersIcon, User, ArrowRight } from 'lucide-react'
 import { Input, Textarea, Dropdown, EmptyState, useToast } from '@/components/ui'
 import { createClient } from '@/lib/supabase/client'
-import type { Profile, Notification } from '@/lib/supabase/types'
+import type { Profile } from '@/lib/supabase/types'
 
 type RecipientMode = 'all' | 'single'
-type Tab = 'send' | 'history'
+type Tab = 'chats' | 'send'
 
-interface SentGroup {
-  title: string
-  body: string | null
-  created_at: string
-  recipientCount: number
-  recipients: string[]
+interface OrderChat {
+  order_id: string
+  order_number: string
+  customer_name: string
+  customer_email: string
+  last_message: string
+  last_message_at: string
+  unread_count: number
 }
 
 export default function AdminNotificationsPage() {
+  const router = useRouter()
   const { success, error: toastError } = useToast()
-  const [activeTab, setActiveTab] = useState<Tab>('send')
+  const [activeTab, setActiveTab] = useState<Tab>('chats')
+
+  // Send form
   const [recipientMode, setRecipientMode] = useState<RecipientMode>('all')
   const [users, setUsers] = useState<Profile[]>([])
   const [filteredUsers, setFilteredUsers] = useState<Profile[]>([])
@@ -30,10 +36,11 @@ export default function AdminNotificationsPage() {
   const [body, setBody] = useState('')
   const [sending, setSending] = useState(false)
 
-  // History
-  const [sentGroups, setSentGroups] = useState<SentGroup[]>([])
-  const [historyLoading, setHistoryLoading] = useState(false)
+  // Chats
+  const [chats, setChats] = useState<OrderChat[]>([])
+  const [chatsLoading, setChatsLoading] = useState(true)
 
+  // Fetch users for send form
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -54,6 +61,76 @@ export default function AdminNotificationsPage() {
     fetchUsers()
   }, [])
 
+  // Fetch active chats
+  useEffect(() => {
+    const fetchChats = async () => {
+      setChatsLoading(true)
+      try {
+        const supabase = createClient()
+
+        // Get all orders that have messages, with latest message info
+        const { data: messages } = await supabase
+          .from('messages')
+          .select('order_id, content, created_at, sender_id, admin_read_at, orders!inner(order_number, user_id, profiles!inner(first_name, last_name, email))')
+          .order('created_at', { ascending: false })
+
+        if (!messages || messages.length === 0) {
+          setChats([])
+          setChatsLoading(false)
+          return
+        }
+
+        // Group by order_id, take latest message per order
+        const chatMap = new Map<string, OrderChat>()
+
+        for (const msg of messages as unknown as Array<{
+          order_id: string
+          content: string
+          created_at: string
+          sender_id: string
+          admin_read_at: string | null
+          orders: {
+            order_number: string
+            user_id: string
+            profiles: { first_name: string; last_name: string; email: string }
+          }
+        }>) {
+          const existing = chatMap.get(msg.order_id)
+
+          if (!existing) {
+            chatMap.set(msg.order_id, {
+              order_id: msg.order_id,
+              order_number: msg.orders.order_number,
+              customer_name: `${msg.orders.profiles.first_name} ${msg.orders.profiles.last_name}`,
+              customer_email: msg.orders.profiles.email,
+              last_message: msg.content,
+              last_message_at: msg.created_at,
+              unread_count: (!msg.admin_read_at && msg.sender_id === msg.orders.user_id) ? 1 : 0,
+            })
+          } else {
+            // Count unread (messages from customer that admin hasn't read)
+            if (!msg.admin_read_at && msg.sender_id === msg.orders.user_id) {
+              existing.unread_count++
+            }
+          }
+        }
+
+        // Sort by latest message
+        const sorted = Array.from(chatMap.values()).sort(
+          (a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime()
+        )
+
+        setChats(sorted)
+      } catch (err) {
+        console.error('Failed to fetch chats:', err)
+      } finally {
+        setChatsLoading(false)
+      }
+    }
+
+    fetchChats()
+  }, [])
+
   useEffect(() => {
     if (!searchQuery.trim()) {
       setFilteredUsers(users)
@@ -69,67 +146,6 @@ export default function AdminNotificationsPage() {
       )
     )
   }, [searchQuery, users])
-
-  // Fetch sent history when tab switches
-  useEffect(() => {
-    if (activeTab !== 'history') return
-
-    const fetchHistory = async () => {
-      setHistoryLoading(true)
-      try {
-        const supabase = createClient()
-        const { data } = await supabase
-          .from('notifications')
-          .select('*, profiles(first_name, last_name, email)')
-          .eq('type', 'admin_message')
-          .order('created_at', { ascending: false })
-          .limit(200)
-
-        if (!data) {
-          setSentGroups([])
-          return
-        }
-
-        // Group notifications by title + created_at (within 1 minute = same batch)
-        const groups: SentGroup[] = []
-        const typed = data as unknown as (Notification & { profiles: { first_name: string; last_name: string; email: string } | null })[]
-
-        for (const n of typed) {
-          const timestamp = new Date(n.created_at).getTime()
-          const existing = groups.find(
-            (g) => g.title === n.title && Math.abs(new Date(g.created_at).getTime() - timestamp) < 60000
-          )
-
-          const recipientName = n.profiles
-            ? `${n.profiles.first_name} ${n.profiles.last_name}`
-            : 'Unbekannt'
-
-          if (existing) {
-            existing.recipientCount++
-            if (existing.recipients.length < 3) {
-              existing.recipients.push(recipientName)
-            }
-          } else {
-            groups.push({
-              title: n.title,
-              body: n.body,
-              created_at: n.created_at,
-              recipientCount: 1,
-              recipients: [recipientName],
-            })
-          }
-        }
-
-        setSentGroups(groups)
-      } catch (err) {
-        console.error('Failed to fetch history:', err)
-      } finally {
-        setHistoryLoading(false)
-      }
-    }
-
-    fetchHistory()
-  }, [activeTab])
 
   const handleSend = async () => {
     if (!title.trim()) {
@@ -158,7 +174,6 @@ export default function AdminNotificationsPage() {
       is_read: false,
     }))
 
-    // Insert in batches of 100
     for (let i = 0; i < notifications.length; i += 100) {
       const batch = notifications.slice(i, i + 100)
       const { error } = await supabase.from('notifications').insert(batch)
@@ -186,21 +201,36 @@ export default function AdminNotificationsPage() {
     label: `${u.first_name} ${u.last_name} (${u.email})`,
   }))
 
+  const formatTime = (dateStr: string) => {
+    const date = new Date(dateStr)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+
+    if (diffMins < 1) return 'Gerade eben'
+    if (diffMins < 60) return `vor ${diffMins} Min.`
+    if (diffHours < 24) return `vor ${diffHours} Std.`
+    if (diffDays < 7) return `vor ${diffDays} Tagen`
+    return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  }
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-[var(--theme-text)]">Nachrichten</h1>
         <p className="text-[var(--theme-textSecondary)]">
-          Benachrichtigungen an Kunden senden und Verlauf einsehen
+          Chats mit Kunden und Benachrichtigungen
         </p>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-1 p-1 rounded-xl bg-[var(--theme-surface)] border border-[var(--theme-border)] w-fit">
         {([
-          { key: 'send', label: 'Neue Nachricht', icon: Send },
-          { key: 'history', label: 'Verlauf', icon: Clock },
-        ] as const).map((tab) => (
+          { key: 'chats' as Tab, label: 'Chats', icon: MessageSquare },
+          { key: 'send' as Tab, label: 'Benachrichtigung senden', icon: Send },
+        ]).map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
@@ -212,9 +242,80 @@ export default function AdminNotificationsPage() {
           >
             <tab.icon size={16} />
             {tab.label}
+            {tab.key === 'chats' && chats.some((c) => c.unread_count > 0) && (
+              <span className="w-2 h-2 rounded-full bg-white/80" />
+            )}
           </button>
         ))}
       </div>
+
+      {/* Chats Tab */}
+      {activeTab === 'chats' && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-2xl space-y-2"
+        >
+          {chatsLoading ? (
+            <div className="space-y-2">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-20 bg-[var(--theme-surface)] rounded-2xl animate-pulse" />
+              ))}
+            </div>
+          ) : chats.length === 0 ? (
+            <EmptyState
+              icon={MessageSquare}
+              title="Keine Chats"
+              description="Noch keine Nachrichten von Kunden erhalten."
+            />
+          ) : (
+            chats.map((chat, i) => (
+              <motion.div
+                key={chat.order_id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.03 }}
+              >
+                <button
+                  onClick={() => router.push(`/admin/orders/${chat.order_id}`)}
+                  className={`w-full text-left p-4 rounded-2xl border transition-colors ${
+                    chat.unread_count > 0
+                      ? 'bg-[var(--accent-primary)]/5 border-[var(--accent-primary)]/20 hover:border-[var(--accent-primary)]/40'
+                      : 'bg-[var(--theme-surface)] border-[var(--theme-border)] hover:border-[var(--accent-primary)]/30'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        {chat.unread_count > 0 && (
+                          <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-[var(--accent-primary)] text-white text-[10px] font-semibold">
+                            {chat.unread_count}
+                          </span>
+                        )}
+                        <span className="text-sm font-semibold text-[var(--theme-text)] truncate">
+                          {chat.customer_name}
+                        </span>
+                        <span className="text-xs text-[var(--accent-primary)] font-medium">
+                          {chat.order_number}
+                        </span>
+                      </div>
+                      <p className="text-sm text-[var(--theme-textSecondary)] truncate">
+                        {chat.last_message}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-xs text-[var(--theme-textTertiary)]">
+                        {formatTime(chat.last_message_at)}
+                      </span>
+                      <ArrowRight size={14} className="text-[var(--theme-textTertiary)]" />
+                    </div>
+                  </div>
+                </button>
+              </motion.div>
+            ))
+          )}
+        </motion.div>
+      )}
 
       {/* Send Tab */}
       {activeTab === 'send' && (
@@ -288,69 +389,6 @@ export default function AdminNotificationsPage() {
               </button>
             </div>
           </div>
-        </motion.div>
-      )}
-
-      {/* History Tab */}
-      {activeTab === 'history' && (
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-2xl space-y-3"
-        >
-          {historyLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-24 bg-[var(--theme-surface)] rounded-2xl animate-pulse" />
-              ))}
-            </div>
-          ) : sentGroups.length === 0 ? (
-            <EmptyState
-              icon={Clock}
-              title="Keine Nachrichten gesendet"
-              description="Noch keine Benachrichtigungen versendet."
-            />
-          ) : (
-            sentGroups.map((group, i) => (
-              <motion.div
-                key={`${group.title}-${group.created_at}`}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.03 }}
-                className="bg-[var(--theme-surface)] rounded-2xl p-5 border border-[var(--theme-border)]"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-semibold text-[var(--theme-text)] mb-1">
-                      {group.title}
-                    </h3>
-                    {group.body && (
-                      <p className="text-sm text-[var(--theme-textSecondary)] mb-2 line-clamp-2">
-                        {group.body}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-3 text-xs text-[var(--theme-textTertiary)]">
-                      <span className="inline-flex items-center gap-1">
-                        {group.recipientCount === 1 ? <User size={12} /> : <UsersIcon size={12} />}
-                        {group.recipientCount === 1
-                          ? group.recipients[0]
-                          : `${group.recipientCount} Empfänger`}
-                      </span>
-                      <span>
-                        {new Date(group.created_at).toLocaleDateString('de-DE', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))
-          )}
         </motion.div>
       )}
     </div>
