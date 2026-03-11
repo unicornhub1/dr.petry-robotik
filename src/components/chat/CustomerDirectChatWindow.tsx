@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Send, Loader2 } from 'lucide-react'
+import { Send, Paperclip, Loader2, MessageCircle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/auth/auth-context'
 import type { Message } from '@/lib/supabase/types'
@@ -12,7 +12,9 @@ export default function CustomerDirectChatWindow() {
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [sending, setSending] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -113,11 +115,47 @@ export default function CustomerDirectChatWindow() {
     }
   }
 
+  const handleFileUpload = async (file: File) => {
+    if (!user) return
+    setUploading(true)
+
+    const supabase = createClient()
+    const filePath = `messages/direct/${user.id}/${Date.now()}_${file.name}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('chat-files')
+      .upload(filePath, file)
+
+    if (uploadError) {
+      setUploading(false)
+      return
+    }
+
+    const { data: urlData } = supabase.storage
+      .from('chat-files')
+      .getPublicUrl(filePath)
+
+    await supabase.from('messages').insert({
+      recipient_id: user.id,
+      sender_id: user.id,
+      content: file.name,
+      type: 'file',
+      file_url: urlData.publicUrl,
+      file_name: file.name,
+    })
+
+    setUploading(false)
+  }
+
   return (
     <div className="flex flex-col h-full">
       {/* Header (desktop only) */}
-      <div className="hidden md:block px-4 py-3 border-b border-[var(--theme-border)] bg-[var(--theme-surface)]">
-        <h3 className="text-sm font-semibold text-[var(--theme-text)]">Direktnachricht</h3>
+      <div className="hidden md:flex items-center gap-2 px-4 py-3 border-b border-[var(--theme-border)] bg-[var(--theme-surface)]">
+        <MessageCircle size={16} className="text-emerald-500" />
+        <h3 className="text-sm font-semibold text-[var(--theme-text)]">Direktchat</h3>
+        <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+          Direkt
+        </span>
       </div>
 
       {/* Messages */}
@@ -147,6 +185,31 @@ export default function CustomerDirectChatWindow() {
       {/* Input */}
       <div className="border-t border-[var(--theme-border)] bg-[var(--theme-surface)] p-3">
         <div className="flex items-end gap-2">
+          {/* File upload */}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="p-2 rounded-lg text-[var(--theme-textSecondary)] hover:text-[var(--theme-text)] hover:bg-[var(--theme-surfaceHover)] transition-colors shrink-0"
+            title="Datei anhaengen"
+          >
+            {uploading ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : (
+              <Paperclip size={18} />
+            )}
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file) handleFileUpload(file)
+              e.target.value = ''
+            }}
+          />
+
+          {/* Text input */}
           <textarea
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
@@ -155,6 +218,8 @@ export default function CustomerDirectChatWindow() {
             rows={1}
             className="flex-1 resize-none rounded-lg px-3 py-2 text-sm bg-[var(--theme-background)] border border-[var(--theme-border)] text-[var(--theme-text)] placeholder:text-[var(--theme-textTertiary)] outline-none focus:border-[var(--accent-primary)] transition-colors"
           />
+
+          {/* Send */}
           <button
             onClick={handleSend}
             disabled={!newMessage.trim() || sending}

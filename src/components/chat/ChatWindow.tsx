@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Send, Paperclip, Loader2 } from 'lucide-react'
+import { Send, Paperclip, Loader2, ClipboardList } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/auth/auth-context'
 import type { Message } from '@/lib/supabase/types'
@@ -151,10 +151,14 @@ export default function ChatWindow({ orderId }: ChatWindowProps) {
   }
 
   return (
-    <div className="flex flex-col h-full bg-[var(--theme-background)] rounded-2xl border border-[var(--theme-border)] overflow-hidden">
+    <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-[var(--theme-border)] bg-[var(--theme-surface)]">
-        <h3 className="text-sm font-semibold text-[var(--theme-text)]">Nachrichten</h3>
+      <div className="hidden md:flex items-center gap-2 px-4 py-3 border-b border-[var(--theme-border)] bg-[var(--theme-surface)]">
+        <ClipboardList size={16} className="text-[var(--accent-primary)]" />
+        <h3 className="text-sm font-semibold text-[var(--theme-text)]">Auftragschat</h3>
+        <span className="text-[10px] font-medium text-[var(--accent-primary)] bg-[var(--accent-primary)]/10 px-2 py-0.5 rounded-full">
+          Auftrag
+        </span>
       </div>
 
       {/* Messages */}
@@ -189,7 +193,7 @@ export default function ChatWindow({ orderId }: ChatWindowProps) {
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
             className="p-2 rounded-lg text-[var(--theme-textSecondary)] hover:text-[var(--theme-text)] hover:bg-[var(--theme-surfaceHover)] transition-colors shrink-0"
-            title="Datei anhängen"
+            title="Datei anhaengen"
           >
             {uploading ? (
               <Loader2 size={18} className="animate-spin" />
