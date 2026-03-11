@@ -202,7 +202,8 @@ export type Database = {
           file_name: string | null
           file_url: string | null
           id: string
-          order_id: string
+          order_id: string | null
+          recipient_id: string | null
           sender_id: string
           type: Database["public"]["Enums"]["message_type"]
         }
@@ -214,7 +215,8 @@ export type Database = {
           file_name?: string | null
           file_url?: string | null
           id?: string
-          order_id: string
+          order_id?: string | null
+          recipient_id?: string | null
           sender_id: string
           type?: Database["public"]["Enums"]["message_type"]
         }
@@ -226,7 +228,8 @@ export type Database = {
           file_name?: string | null
           file_url?: string | null
           id?: string
-          order_id?: string
+          order_id?: string | null
+          recipient_id?: string | null
           sender_id?: string
           type?: Database["public"]["Enums"]["message_type"]
         }
@@ -236,6 +239,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -488,11 +498,11 @@ export type Database = {
           billing_zip?: string | null
           created_at?: string
           email: string
-          first_name: string
+          first_name?: string
           id: string
           is_admin?: boolean
           is_approved?: boolean
-          last_name: string
+          last_name?: string
           organization?: string | null
           phone?: string | null
           position?: string | null

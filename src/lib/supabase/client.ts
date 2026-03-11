@@ -14,9 +14,15 @@ export function createClient() {
     return globalThis.__supabaseClient
   }
 
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  // During build/prerendering ENV vars may not exist.
+  // Use placeholder values so the build succeeds — the client
+  // is never actually called during SSR (only inside useEffect).
   const client = createBrowserClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    url || 'https://placeholder.supabase.co',
+    key || 'placeholder-anon-key'
   )
 
   if (typeof window !== 'undefined') {

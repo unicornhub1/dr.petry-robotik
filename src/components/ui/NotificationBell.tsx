@@ -2,24 +2,23 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bell, X, ExternalLink } from 'lucide-react'
+import { Bell, ExternalLink } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import type { Notification, Database } from '@/lib/supabase/types'
+import { useAuth } from '@/lib/auth/auth-context'
+import type { Notification } from '@/lib/supabase/types'
 
 export default function NotificationBell() {
+  const { user } = useAuth()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
-  const supabase = createClient()
 
   const unreadCount = notifications.filter((n) => !n.is_read).length
 
   const fetchNotifications = useCallback(async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
     if (!user) return
 
+    const supabase = createClient()
     const { data } = await supabase
       .from('notifications')
       .select('*')
@@ -28,20 +27,15 @@ export default function NotificationBell() {
       .limit(20)
 
     if (data) setNotifications(data)
-  }, [supabase])
+  }, [user])
 
   const markAllRead = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
     if (!user) return
 
-    // Cast required due to Supabase type inference limitation with .update()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const db = supabase as any
-    await db
+    const supabase = createClient()
+    await supabase
       .from('notifications')
-      .update({ is_read: true })
+      .update({ is_read: true } as never)
       .eq('user_id', user.id)
       .eq('is_read', false)
 
@@ -49,23 +43,34 @@ export default function NotificationBell() {
   }
 
   const markRead = async (id: string) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const db = supabase as any
-    await db.from('notifications').update({ is_read: true }).eq('id', id)
+    const supabase = createClient()
+    await supabase
+      .from('notifications')
+      .update({ is_read: true } as never)
+      .eq('id', id)
+
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
     )
   }
 
-  // Initial fetch + realtime subscription
+  // Initial fetch + realtime subscription (filtered by user_id)
   useEffect(() => {
+    if (!user) return
+
     fetchNotifications()
 
+    const supabase = createClient()
     const channel = supabase
-      .channel('notifications-bell')
+      .channel(`notifications-bell:${user.id}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'notifications' },
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
         (payload) => {
           setNotifications((prev) => [payload.new as Notification, ...prev])
         }
@@ -75,7 +80,7 @@ export default function NotificationBell() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [fetchNotifications, supabase])
+  }, [fetchNotifications, user])
 
   // Close on outside click
   useEffect(() => {
