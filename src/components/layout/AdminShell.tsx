@@ -20,9 +20,9 @@ import { NotificationBell } from '@/components/ui'
 import { useAuth } from '@/lib/auth/auth-context'
 
 const adminNavItems: SidebarItem[] = [
-  { label: 'Uebersicht', href: '/admin', icon: LayoutDashboard },
+  { label: 'Übersicht', href: '/admin', icon: LayoutDashboard },
   { label: 'Nutzer', href: '/admin/users', icon: Users },
-  { label: 'Auftraege', href: '/admin/orders', icon: ClipboardList },
+  { label: 'Aufträge', href: '/admin/orders', icon: ClipboardList },
   { label: 'Pakete', href: '/admin/packages', icon: Package },
   { label: 'Platzarten', href: '/admin/facility-types', icon: MapPin },
   { label: 'Preise', href: '/admin/pricing', icon: CreditCard },

@@ -46,7 +46,7 @@ const blogPosts: Record<string, {
     category: 'Produkt',
     date: '15. Januar 2025',
     readTime: '8 min',
-    author: 'IB Dr. Petry',
+    author: 'Petry Robotik',
     authorRole: 'Ingenieurbüro für Lichttechnik',
     image: '/Bilder/iloveimg-compressed/Gemini_Generated_Image_zhdezazhdezazhde.png',
     content: [

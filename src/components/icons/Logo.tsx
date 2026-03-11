@@ -85,7 +85,7 @@ export default function Logo({ className = '', showText = true }: LogoProps) {
       {showText && (
         <div className="flex flex-col leading-tight">
           <span className="text-lg font-bold text-[var(--theme-text)]">
-            IB Dr. Petry
+            Petry
           </span>
           <span className="text-xs font-medium text-[var(--accent-primary)] tracking-wider uppercase">
             Robotik

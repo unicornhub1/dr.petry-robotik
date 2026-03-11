@@ -83,7 +83,7 @@ export default function Modal({
                 <button
                   onClick={onClose}
                   className="ml-auto p-1.5 rounded-[var(--radius-md)] text-[var(--theme-textTertiary)] hover:text-[var(--theme-text)] hover:bg-[var(--theme-surfaceHover)] transition-colors duration-[var(--transition-fast)]"
-                  aria-label="Schliessen"
+                  aria-label="Schließen"
                 >
                   <X size={18} />
                 </button>

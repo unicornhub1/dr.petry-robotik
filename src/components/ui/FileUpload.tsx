@@ -28,7 +28,7 @@ export default function FileUpload({
 
     if (maxSize && file.size > maxSize) {
       const maxMB = (maxSize / 1024 / 1024).toFixed(0)
-      setError(`Datei zu gross. Maximal ${maxMB} MB erlaubt.`)
+      setError(`Datei zu groß. Maximal ${maxMB} MB erlaubt.`)
       return
     }
 
@@ -42,7 +42,7 @@ export default function FileUpload({
       )
 
       if (!isValid) {
-        setError(`Ungaeltiger Dateityp. Erlaubt: ${accept}`)
+        setError(`Ungültiger Dateityp. Erlaubt: ${accept}`)
         return
       }
     }

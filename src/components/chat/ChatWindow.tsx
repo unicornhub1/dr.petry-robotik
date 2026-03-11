@@ -126,7 +126,7 @@ export default function ChatWindow({ orderId }: ChatWindowProps) {
     const filePath = `messages/${orderId}/${Date.now()}_${file.name}`
 
     const { error: uploadError } = await supabase.storage
-      .from('attachments')
+      .from('chat-files')
       .upload(filePath, file)
 
     if (uploadError) {
@@ -135,7 +135,7 @@ export default function ChatWindow({ orderId }: ChatWindowProps) {
     }
 
     const { data: urlData } = supabase.storage
-      .from('attachments')
+      .from('chat-files')
       .getPublicUrl(filePath)
 
     await supabase.from('messages').insert({
@@ -172,7 +172,7 @@ export default function ChatWindow({ orderId }: ChatWindowProps) {
             content={msg.content}
             type={msg.type}
             isSelf={msg.sender_id === user?.id}
-            senderName={msg.sender_id === user?.id ? 'Sie' : 'Dr. Petry Robotik'}
+            senderName={msg.sender_id === user?.id ? 'Sie' : 'Petry Robotik'}
             timestamp={msg.created_at}
             fileUrl={msg.file_url}
             fileName={msg.file_name}
@@ -189,7 +189,7 @@ export default function ChatWindow({ orderId }: ChatWindowProps) {
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
             className="p-2 rounded-lg text-[var(--theme-textSecondary)] hover:text-[var(--theme-text)] hover:bg-[var(--theme-surfaceHover)] transition-colors shrink-0"
-            title="Datei anhaengen"
+            title="Datei anhängen"
           >
             {uploading ? (
               <Loader2 size={18} className="animate-spin" />

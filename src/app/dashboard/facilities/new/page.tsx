@@ -58,6 +58,20 @@ export default function NewFacilityPage() {
     }))
   }
 
+  const handleFacilityDetected = (facilityTypeName: string, osmName?: string) => {
+    // Find matching facility type by name
+    const match = facilityTypes.find(
+      (t) => t.name.toLowerCase() === facilityTypeName.toLowerCase()
+    )
+    if (match) {
+      setForm((prev) => ({
+        ...prev,
+        type_id: prev.type_id || match.id, // Only auto-set if not already chosen
+        name: prev.name || osmName || '', // Suggest OSM name if field is empty
+      }))
+    }
+  }
+
   const handleSave = async () => {
     if (!user) return
     if (!form.name.trim()) {
@@ -65,7 +79,7 @@ export default function NewFacilityPage() {
       return
     }
     if (!form.type_id) {
-      toast.error('Bitte waehlen Sie eine Anlagenart.')
+      toast.error('Bitte wählen Sie eine Anlagenart.')
       return
     }
 
@@ -149,6 +163,7 @@ export default function NewFacilityPage() {
           latitude={form.latitude}
           longitude={form.longitude}
           onChange={handleMapChange}
+          onFacilityDetected={handleFacilityDetected}
         />
         {form.address && (
           <p className="mt-3 text-sm text-[var(--theme-textSecondary)]">
@@ -167,7 +182,7 @@ export default function NewFacilityPage() {
         <h2 className="text-lg font-semibold text-[var(--theme-text)] mb-4">Abmessungen &amp; Beleuchtung</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
-            label="Laenge (m)"
+            label="Länge (m)"
             type="number"
             value={form.length_m}
             onChange={(e) => handleChange('length_m', e.target.value)}

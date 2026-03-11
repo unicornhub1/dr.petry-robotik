@@ -1,5 +1,22 @@
 @import "tailwindcss";
 
+/* Override Tailwind v4 Preflight */
+@layer base {
+  input:is([type="button"], [type="submit"], [type="reset"]),
+  input[type="file"]::file-selector-button,
+  button {
+    cursor: pointer;
+  }
+
+  input,
+  textarea,
+  select {
+    border: none;
+    outline: none;
+    background: transparent;
+  }
+}
+
 /* ===================================
    Petry Robotik - Design System
    =================================== */
@@ -134,11 +151,7 @@ body {
   background: var(--theme-borderHover);
 }
 
-/* Focus Styles */
-*:focus-visible {
-  outline: 2px solid var(--accent-primary);
-  outline-offset: 2px;
-}
+/* Focus Styles - handled by individual components */
 
 /* Link Styles - nur für Content-Bereiche */
 a {

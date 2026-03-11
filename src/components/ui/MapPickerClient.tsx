@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Search, MapPin, Loader2 } from 'lucide-react'
+import { Search, MapPin, Loader2, Sparkles } from 'lucide-react'
 import type { MapPickerProps } from './MapPicker'
+import { detectFacilityType } from '@/lib/osm/detect-facility'
 
 // Default center: Germany
 const DEFAULT_LAT = 51.1657
@@ -15,7 +16,7 @@ interface NominatimResult {
   display_name: string
 }
 
-export default function MapPickerClient({ latitude, longitude, onChange }: MapPickerProps) {
+export default function MapPickerClient({ latitude, longitude, onChange, onFacilityDetected }: MapPickerProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapRef = useRef<any>(null)
@@ -27,9 +28,26 @@ export default function MapPickerClient({ latitude, longitude, onChange }: MapPi
   const [searchResults, setSearchResults] = useState<NominatimResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [showResults, setShowResults] = useState(false)
+  const [detecting, setDetecting] = useState(false)
+  const [detectedInfo, setDetectedInfo] = useState<{ type: string; name?: string } | null>(null)
 
   const currentLat = latitude ?? DEFAULT_LAT
   const currentLng = longitude ?? DEFAULT_LNG
+
+  const tryDetectFacility = useCallback(async (lat: number, lng: number) => {
+    if (!onFacilityDetected) return
+    setDetecting(true)
+    setDetectedInfo(null)
+    try {
+      const result = await detectFacilityType(lat, lng)
+      if (result) {
+        setDetectedInfo({ type: result.type, name: result.osmName })
+        onFacilityDetected(result.type, result.osmName)
+      }
+    } finally {
+      setDetecting(false)
+    }
+  }, [onFacilityDetected])
 
   const reverseGeocode = useCallback(async (lat: number, lng: number): Promise<string> => {
     try {
@@ -91,12 +109,14 @@ export default function MapPickerClient({ latitude, longitude, onChange }: MapPi
         const pos = marker.getLatLng()
         const address = await reverseGeocode(pos.lat, pos.lng)
         onChange(pos.lat, pos.lng, address)
+        tryDetectFacility(pos.lat, pos.lng)
       })
 
       map.on('click', async (e: { latlng: { lat: number; lng: number } }) => {
         marker.setLatLng([e.latlng.lat, e.latlng.lng])
         const address = await reverseGeocode(e.latlng.lat, e.latlng.lng)
         onChange(e.latlng.lat, e.latlng.lng, address)
+        tryDetectFacility(e.latlng.lat, e.latlng.lng)
       })
 
       mapRef.current = map
@@ -160,8 +180,9 @@ export default function MapPickerClient({ latitude, longitude, onChange }: MapPi
       onChange(lat, lng, result.display_name)
       setSearchValue(result.display_name)
       setShowResults(false)
+      tryDetectFacility(lat, lng)
     },
-    [onChange]
+    [onChange, tryDetectFacility]
   )
 
   return (
@@ -223,6 +244,23 @@ export default function MapPickerClient({ latitude, longitude, onChange }: MapPi
         className="w-full h-64 rounded-[var(--radius-xl)] border border-[var(--theme-border)] overflow-hidden"
         style={{ minHeight: 256 }}
       />
+
+      {/* Facility detection info */}
+      {detecting && (
+        <div className="flex items-center gap-2 text-xs text-[var(--theme-textSecondary)]">
+          <Loader2 size={12} className="animate-spin" />
+          <span>Sportanlage wird erkannt...</span>
+        </div>
+      )}
+      {!detecting && detectedInfo && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/20">
+          <Sparkles size={14} className="text-[var(--accent-primary)] shrink-0" />
+          <span className="text-xs text-[var(--theme-text)]">
+            Erkannt: <strong>{detectedInfo.type}</strong>
+            {detectedInfo.name && <span className="text-[var(--theme-textSecondary)]"> ({detectedInfo.name})</span>}
+          </span>
+        </div>
+      )}
 
       {/* Coordinates display */}
       {latitude && longitude && (

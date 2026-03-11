@@ -24,15 +24,20 @@ export default function AdminUsersPage() {
 
   useEffect(() => {
     const fetchUsers = async () => {
-      const supabase = createClient()
-      const { data } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('is_admin', false)
-        .order('created_at', { ascending: false })
+      try {
+        const supabase = createClient()
+        const { data } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('is_admin', false)
+          .order('created_at', { ascending: false })
 
-      setUsers(data ?? [])
-      setLoading(false)
+        setUsers((data as unknown as Profile[]) ?? [])
+      } catch (err) {
+        console.error('Failed to fetch:', err)
+      } finally {
+        setLoading(false)
+      }
     }
 
     fetchUsers()

@@ -16,9 +16,9 @@ import StepConfirmation from '@/components/onboarding/StepConfirmation'
 import { createClient } from '@/lib/supabase/client'
 
 const STEPS = [
-  { label: 'Typ waehlen' },
+  { label: 'Typ wählen' },
   { label: 'Daten' },
-  { label: 'Bestaetigung' },
+  { label: 'Bestätigung' },
 ]
 
 const INITIAL_FORM: RegistrationFormData = {
@@ -42,7 +42,7 @@ function validateForm(
   if (!formData.email.trim()) {
     errors.email = 'E-Mail-Adresse ist erforderlich.'
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-    errors.email = 'Bitte geben Sie eine gueltige E-Mail-Adresse ein.'
+    errors.email = 'Bitte geben Sie eine gültige E-Mail-Adresse ein.'
   }
 
   const needsOrg = accountType && ['staedtisch', 'verein', 'unternehmen'].includes(accountType)
@@ -109,12 +109,16 @@ export default function OnboardingPage() {
         })
 
         if (error) {
-          setErrors({ email: 'Fehler beim Senden des Links. Bitte versuchen Sie es erneut.' })
+          console.error('Onboarding auth error:', error.message, error)
+          setErrors({ email: `Fehler: ${error.message}` })
           return
         }
 
         setDirection(1)
         setCurrentStep(2)
+      } catch (err) {
+        console.error('Onboarding network error:', err)
+        setErrors({ email: 'Netzwerkfehler. Bitte prüfen Sie Ihre Verbindung.' })
       } finally {
         setIsLoading(false)
       }
@@ -155,9 +159,9 @@ export default function OnboardingPage() {
   const canProceed = currentStep === 0 ? accountType !== null : true
 
   const slideVariants = {
-    enter: (dir: number) => ({ x: dir * 40, opacity: 0 }),
-    center: { x: 0, opacity: 1 },
-    exit: (dir: number) => ({ x: dir * -40, opacity: 0 }),
+    enter: (dir: number) => ({ x: dir * 40 }),
+    center: { x: 0 },
+    exit: (dir: number) => ({ x: dir * -40 }),
   }
 
   return (
@@ -174,16 +178,11 @@ export default function OnboardingPage() {
           className="flex items-center gap-2 text-sm text-[var(--theme-textSecondary)] hover:text-[var(--theme-text)] transition-colors"
         >
           <ArrowLeft size={16} />
-          Zurueck zur Startseite
+          Zurück zur Startseite
         </Link>
       </motion.div>
 
-      <motion.div
-        className="w-full max-w-lg"
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-      >
+      <div className="w-full max-w-lg">
         {/* Logo */}
         <div className="flex justify-center mb-8">
           <Logo />
@@ -252,7 +251,7 @@ export default function OnboardingPage() {
                   className="flex items-center gap-2 text-sm text-[var(--theme-textSecondary)] hover:text-[var(--theme-text)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   <ArrowLeft size={16} />
-                  Zurueck
+                  Zurück
                 </button>
 
                 <Button
@@ -286,7 +285,7 @@ export default function OnboardingPage() {
             </Link>
           </p>
         )}
-      </motion.div>
+      </div>
     </div>
   )
 }

@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
           <div class="container">
             <div class="header">
               <h1 style="margin: 0;">Neue Kontaktanfrage</h1>
-              <p style="margin: 10px 0 0 0; opacity: 0.9;">IB Dr. Petry Robotik</p>
+              <p style="margin: 10px 0 0 0; opacity: 0.9;">Petry Robotik</p>
             </div>
             <div class="content">
               <div class="field">
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
 
     // Send email (uncomment in production)
     // await transporter.sendMail({
-    //   from: `"IB Dr. Petry Robotik" <${process.env.EMAIL_FROM}>`,
+    //   from: `"Petry Robotik" <${process.env.EMAIL_FROM}>`,
     //   to: process.env.EMAIL_TO,
     //   replyTo: body.email,
     //   subject: `Neue Kontaktanfrage: ${interestLabels[body.interest] || body.interest}`,

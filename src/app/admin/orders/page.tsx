@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { ClipboardList, MessageSquare } from 'lucide-react'
 import { Table, Dropdown, EmptyState, StatusBadge, PriceDisplay } from '@/components/ui'
 import { createClient } from '@/lib/supabase/client'
-import type { Order, OrderStatus } from '@/lib/supabase/types'
+import type { Order, OrderStatus, Profile } from '@/lib/supabase/types'
 
 interface OrderWithProfile extends Order {
   profiles?: {
@@ -19,7 +19,7 @@ interface OrderWithProfile extends Order {
 const statusOptions = [
   { value: 'all', label: 'Alle Status' },
   { value: 'requested', label: 'Angefragt' },
-  { value: 'confirmed', label: 'Bestaetigt' },
+  { value: 'confirmed', label: 'Bestätigt' },
   { value: 'scheduled', label: 'Geplant' },
   { value: 'measuring', label: 'In Messung' },
   { value: 'completed', label: 'Abgeschlossen' },
@@ -34,46 +34,51 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     const fetchOrders = async () => {
-      const supabase = createClient()
+      try {
+        const supabase = createClient()
 
-      let query = supabase
-        .from('orders')
-        .select('*, profiles(first_name, last_name)')
-        .order('created_at', { ascending: false })
+        let query = supabase
+          .from('orders')
+          .select('*, profiles(first_name, last_name)')
+          .order('created_at', { ascending: false })
 
-      if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter)
-      }
-
-      const { data } = await query
-
-      // Fetch unread message counts per order
-      const orderIds = (data ?? []).map((o: Record<string, unknown>) => o.id as string)
-
-      let unreadCounts: Record<string, number> = {}
-      if (orderIds.length > 0) {
-        const { data: msgs } = await supabase
-          .from('messages')
-          .select('order_id')
-          .in('order_id', orderIds)
-          .is('admin_read_at', null)
-
-        if (msgs) {
-          unreadCounts = msgs.reduce((acc: Record<string, number>, m: Record<string, unknown>) => {
-            const oid = m.order_id as string
-            acc[oid] = (acc[oid] || 0) + 1
-            return acc
-          }, {})
+        if (statusFilter !== 'all') {
+          query = query.eq('status', statusFilter as OrderStatus)
         }
+
+        const { data } = await query
+
+        // Fetch unread message counts per order
+        const orderIds = (data ?? []).map((o: Record<string, unknown>) => o.id as string)
+
+        let unreadCounts: Record<string, number> = {}
+        if (orderIds.length > 0) {
+          const { data: msgs } = await supabase
+            .from('messages')
+            .select('order_id')
+            .in('order_id', orderIds)
+            .is('admin_read_at', null)
+
+          if (msgs) {
+            unreadCounts = msgs.reduce((acc: Record<string, number>, m: Record<string, unknown>) => {
+              const oid = m.order_id as string
+              acc[oid] = (acc[oid] || 0) + 1
+              return acc
+            }, {})
+          }
+        }
+
+        const enriched = (data ?? []).map((o: Record<string, unknown>) => ({
+          ...(o as unknown as OrderWithProfile),
+          unread_count: unreadCounts[o.id as string] || 0,
+        }))
+
+        setOrders(enriched)
+      } catch (err) {
+        console.error('Failed to fetch:', err)
+      } finally {
+        setLoading(false)
       }
-
-      const enriched = (data ?? []).map((o: Record<string, unknown>) => ({
-        ...(o as OrderWithProfile),
-        unread_count: unreadCounts[o.id as string] || 0,
-      }))
-
-      setOrders(enriched)
-      setLoading(false)
     }
 
     setLoading(true)
@@ -144,9 +149,9 @@ export default function AdminOrdersPage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--theme-text)]">Auftraege</h1>
+          <h1 className="text-2xl font-bold text-[var(--theme-text)]">Aufträge</h1>
           <p className="text-[var(--theme-textSecondary)]">
-            Alle Kundenauftraege verwalten
+            Alle Kundenaufträge verwalten
           </p>
         </div>
         <div className="w-48">
@@ -163,8 +168,8 @@ export default function AdminOrdersPage() {
       {orders.length === 0 ? (
         <EmptyState
           icon={ClipboardList}
-          title="Keine Auftraege gefunden"
-          description="Es gibt keine Auftraege mit diesem Filter."
+          title="Keine Aufträge gefunden"
+          description="Es gibt keine Aufträge mit diesem Filter."
         />
       ) : (
         <motion.div

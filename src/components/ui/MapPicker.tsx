@@ -6,6 +6,7 @@ export interface MapPickerProps {
   latitude?: number
   longitude?: number
   onChange: (lat: number, lng: number, address: string) => void
+  onFacilityDetected?: (facilityType: string, osmName?: string) => void
 }
 
 // Dynamic import with ssr:false to avoid leaflet SSR issues

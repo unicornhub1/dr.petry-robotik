@@ -25,14 +25,19 @@ export default function AdminPricingPage() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
 
   const fetchRules = async () => {
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('pricing_rules')
-      .select('*')
-      .order('min_facilities', { ascending: true })
+    try {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('pricing_rules')
+        .select('*')
+        .order('min_facilities', { ascending: true })
 
-    setRules(data ?? [])
-    setLoading(false)
+      setRules(data ?? [])
+    } catch (err) {
+      console.error('Failed to fetch:', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -107,9 +112,9 @@ export default function AdminPricingPage() {
       .eq('id', id)
 
     if (error) {
-      toastError('Fehler beim Loeschen')
+      toastError('Fehler beim Löschen')
     } else {
-      success('Preisregel geloescht')
+      success('Preisregel gelöscht')
       fetchRules()
     }
     setDeleteConfirmId(null)
@@ -163,7 +168,7 @@ export default function AdminPricingPage() {
         <button
           onClick={() => setDeleteConfirmId(rule.id)}
           className="p-1.5 rounded-lg text-[var(--color-error)] hover:bg-[var(--color-error)]/10 transition-colors"
-          title="Loeschen"
+          title="Löschen"
         >
           <Trash2 size={14} />
         </button>
@@ -193,7 +198,7 @@ export default function AdminPricingPage() {
         <EmptyState
           icon={CreditCard}
           title="Keine Preisregeln vorhanden"
-          description="Erstellen Sie Staffelrabatte fuer Ihre Kunden."
+          description="Erstellen Sie Staffelrabatte für Ihre Kunden."
           action={{ label: 'Neue Regel', onClick: openNew }}
         />
       ) : (
@@ -223,7 +228,7 @@ export default function AdminPricingPage() {
             type="number"
             value={String(form.max_facilities)}
             onChange={(e) => setForm({ ...form, max_facilities: e.target.value === '' ? '' : parseInt(e.target.value) })}
-            placeholder="Leer lassen fuer unbegrenzt"
+            placeholder="Leer lassen für unbegrenzt"
           />
           <Input
             label="Rabatt (%)"
@@ -263,12 +268,12 @@ export default function AdminPricingPage() {
       <Modal
         isOpen={!!deleteConfirmId}
         onClose={() => setDeleteConfirmId(null)}
-        title="Preisregel loeschen"
+        title="Preisregel löschen"
         size="sm"
       >
         <div className="space-y-4">
           <p className="text-sm text-[var(--theme-textSecondary)]">
-            Moechten Sie diese Preisregel wirklich loeschen? Diese Aktion kann nicht rueckgaengig gemacht werden.
+            Möchten Sie diese Preisregel wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.
           </p>
           <div className="flex justify-end gap-3">
             <button
@@ -281,7 +286,7 @@ export default function AdminPricingPage() {
               onClick={() => deleteConfirmId && handleDelete(deleteConfirmId)}
               className="px-4 py-2 rounded-lg text-sm font-medium bg-[var(--color-error)] text-white hover:opacity-90 transition-opacity"
             >
-              Loeschen
+              Löschen
             </button>
           </div>
         </div>

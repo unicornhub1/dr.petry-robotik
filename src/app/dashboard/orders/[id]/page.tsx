@@ -31,33 +31,38 @@ export default function OrderDetailPage() {
     if (!orderId) return
 
     const fetchOrder = async () => {
-      const supabase = createClient()
+      try {
+        const supabase = createClient()
 
-      const [{ data: orderData }, { data: itemsData }, { data: bookingData }] =
-        await Promise.all([
-          supabase.from('orders').select('*').eq('id', orderId).single(),
-          supabase
-            .from('order_items')
-            .select('id, item_price, facilities(name, address), packages(name)')
-            .eq('order_id', orderId),
-          supabase
-            .from('bookings')
-            .select('*')
-            .eq('order_id', orderId)
-            .maybeSingle(),
-        ])
+        const [{ data: orderData }, { data: itemsData }, { data: bookingData }] =
+          await Promise.all([
+            supabase.from('orders').select('*').eq('id', orderId).single(),
+            supabase
+              .from('order_items')
+              .select('id, item_price, facilities(name, address), packages(name)')
+              .eq('order_id', orderId),
+            supabase
+              .from('bookings')
+              .select('*')
+              .eq('order_id', orderId)
+              .maybeSingle(),
+          ])
 
-      setOrder(orderData)
-      setItems(
-        (itemsData ?? []).map((item: Record<string, unknown>) => ({
-          id: item.id as string,
-          facility: item.facilities as { name: string; address: string | null } | null,
-          package: item.packages as { name: string } | null,
-          item_price: item.item_price as number | null,
-        }))
-      )
-      setBooking(bookingData)
-      setLoading(false)
+        setOrder(orderData)
+        setItems(
+          (itemsData ?? []).map((item: Record<string, unknown>) => ({
+            id: item.id as string,
+            facility: item.facilities as { name: string; address: string | null } | null,
+            package: item.packages as { name: string } | null,
+            item_price: item.item_price as number | null,
+          }))
+        )
+        setBooking(bookingData)
+      } catch (err) {
+        console.error('Failed to fetch:', err)
+      } finally {
+        setLoading(false)
+      }
     }
 
     fetchOrder()

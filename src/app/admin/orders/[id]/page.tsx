@@ -32,7 +32,7 @@ interface OrderItemDetail {
 
 const allStatuses: { value: OrderStatus; label: string }[] = [
   { value: 'requested', label: 'Angefragt' },
-  { value: 'confirmed', label: 'Bestaetigt' },
+  { value: 'confirmed', label: 'Bestätigt' },
   { value: 'scheduled', label: 'Geplant' },
   { value: 'measuring', label: 'In Messung' },
   { value: 'completed', label: 'Abgeschlossen' },
@@ -64,52 +64,56 @@ export default function AdminOrderDetailPage() {
   const [savingBooking, setSavingBooking] = useState(false)
 
   const fetchOrder = useCallback(async () => {
-    const supabase = createClient()
+    try {
+      const supabase = createClient()
 
-    const { data: orderData } = await supabase
-      .from('orders')
-      .select('*, profiles(first_name, last_name, email)')
-      .eq('id', orderId)
-      .single()
+      const { data: orderData } = await supabase
+        .from('orders')
+        .select('*, profiles(first_name, last_name, email)')
+        .eq('id', orderId)
+        .single()
 
-    if (orderData) {
-      const o = orderData as unknown as OrderDetail
-      setOrder(o)
-      setSelectedStatus(o.status)
-      setAdminNotes(o.admin_notes ?? '')
-    }
+      if (orderData) {
+        const o = orderData as unknown as OrderDetail
+        setOrder(o)
+        setSelectedStatus(o.status)
+        setAdminNotes(o.admin_notes ?? '')
+      }
 
-    const { data: itemsData } = await supabase
-      .from('order_items')
-      .select('id, item_price, facilities(name, address), packages(name)')
-      .eq('order_id', orderId)
-
-    setItems((itemsData as unknown as OrderItemDetail[]) ?? [])
-
-    const { data: bookingData } = await supabase
-      .from('bookings')
-      .select('*')
-      .eq('order_id', orderId)
-      .maybeSingle()
-
-    if (bookingData) {
-      setBooking(bookingData)
-      setBookingDate(bookingData.date)
-      setBookingStartTime(bookingData.start_time)
-      setBookingEndTime(bookingData.end_time)
-    }
-
-    // Mark admin messages as read
-    if (user) {
-      await supabase
-        .from('messages')
-        .update({ admin_read_at: new Date().toISOString() })
+      const { data: itemsData } = await supabase
+        .from('order_items')
+        .select('id, item_price, facilities(name, address), packages(name)')
         .eq('order_id', orderId)
-        .neq('sender_id', user.id)
-        .is('admin_read_at', null)
-    }
 
-    setLoading(false)
+      setItems((itemsData as unknown as OrderItemDetail[]) ?? [])
+
+      const { data: bookingData } = await supabase
+        .from('bookings')
+        .select('*')
+        .eq('order_id', orderId)
+        .maybeSingle()
+
+      if (bookingData) {
+        setBooking(bookingData)
+        setBookingDate(bookingData.date)
+        setBookingStartTime(bookingData.start_time)
+        setBookingEndTime(bookingData.end_time)
+      }
+
+      // Mark admin messages as read
+      if (user) {
+        await supabase
+          .from('messages')
+          .update({ admin_read_at: new Date().toISOString() })
+          .eq('order_id', orderId)
+          .neq('sender_id', user.id)
+          .is('admin_read_at', null)
+      }
+    } catch (err) {
+      console.error('Failed to fetch:', err)
+    } finally {
+      setLoading(false)
+    }
   }, [orderId, user])
 
   useEffect(() => {
@@ -292,7 +296,7 @@ export default function AdminOrderDetailPage() {
 
           {/* Status Change */}
           <Card hover={false}>
-            <h3 className="font-semibold text-[var(--theme-text)] mb-4">Status aendern</h3>
+            <h3 className="font-semibold text-[var(--theme-text)] mb-4">Status ändern</h3>
             <div className="flex items-end gap-3">
               <div className="flex-1">
                 <Dropdown
@@ -399,7 +403,7 @@ export default function AdminOrderDetailPage() {
       >
         <div className="space-y-4">
           <p className="text-sm text-[var(--theme-textSecondary)]">
-            Moechten Sie diesen Auftrag wirklich ablehnen? Der Kunde wird darueber informiert.
+            Möchten Sie diesen Auftrag wirklich ablehnen? Der Kunde wird darüber informiert.
           </p>
           <div className="flex justify-end gap-3">
             <button

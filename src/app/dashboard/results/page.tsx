@@ -26,55 +26,60 @@ export default function ResultsPage() {
     if (!user) return
 
     const fetchResults = async () => {
-      const supabase = createClient()
+      try {
+        const supabase = createClient()
 
-      // Fetch results with order info
-      const { data: resultsData } = await supabase
-        .from('results')
-        .select(`
-          id,
-          order_id,
-          created_at,
-          order_item_id,
-          orders!inner(order_number, user_id),
-          order_items(facilities(name))
-        `)
-        .eq('orders.user_id', user.id)
-        .order('created_at', { ascending: false })
+        // Fetch results with order info
+        const { data: resultsData } = await supabase
+          .from('results')
+          .select(`
+            id,
+            order_id,
+            created_at,
+            order_item_id,
+            orders!inner(order_number, user_id),
+            order_items(facilities(name))
+          `)
+          .eq('orders.user_id', user.id)
+          .order('created_at', { ascending: false })
 
-      // Fetch file counts
-      const resultIds = (resultsData ?? []).map((r: Record<string, unknown>) => r.id as string)
-      let fileCounts: Record<string, number> = {}
+        // Fetch file counts
+        const resultIds = (resultsData ?? []).map((r: Record<string, unknown>) => r.id as string)
+        let fileCounts: Record<string, number> = {}
 
-      if (resultIds.length > 0) {
-        const { data: files } = await supabase
-          .from('result_files')
-          .select('result_id')
-          .in('result_id', resultIds)
+        if (resultIds.length > 0) {
+          const { data: files } = await supabase
+            .from('result_files')
+            .select('result_id')
+            .in('result_id', resultIds)
 
-        fileCounts = (files ?? []).reduce((acc: Record<string, number>, f: Record<string, unknown>) => {
-          const rid = f.result_id as string
-          acc[rid] = (acc[rid] || 0) + 1
-          return acc
-        }, {})
-      }
-
-      const mapped: ResultWithInfo[] = (resultsData ?? []).map((r: Record<string, unknown>) => {
-        const orders = r.orders as Record<string, unknown>
-        const orderItems = r.order_items as Record<string, unknown> | null
-        const facilities = orderItems?.facilities as Record<string, unknown> | null
-        return {
-          id: r.id as string,
-          order_id: r.order_id as string,
-          order_number: orders?.order_number as string,
-          facility_name: facilities?.name as string | null,
-          created_at: r.created_at as string,
-          file_count: fileCounts[r.id as string] || 0,
+          fileCounts = (files ?? []).reduce((acc: Record<string, number>, f: Record<string, unknown>) => {
+            const rid = f.result_id as string
+            acc[rid] = (acc[rid] || 0) + 1
+            return acc
+          }, {})
         }
-      })
 
-      setResults(mapped)
-      setLoading(false)
+        const mapped: ResultWithInfo[] = (resultsData ?? []).map((r: Record<string, unknown>) => {
+          const orders = r.orders as Record<string, unknown>
+          const orderItems = r.order_items as Record<string, unknown> | null
+          const facilities = orderItems?.facilities as Record<string, unknown> | null
+          return {
+            id: r.id as string,
+            order_id: r.order_id as string,
+            order_number: orders?.order_number as string,
+            facility_name: facilities?.name as string | null,
+            created_at: r.created_at as string,
+            file_count: fileCounts[r.id as string] || 0,
+          }
+        })
+
+        setResults(mapped)
+      } catch (err) {
+        console.error('Failed to fetch:', err)
+      } finally {
+        setLoading(false)
+      }
     }
 
     fetchResults()
@@ -99,7 +104,7 @@ export default function ResultsPage() {
       <div>
         <h1 className="text-2xl font-bold text-[var(--theme-text)]">Ergebnisse</h1>
         <p className="text-[var(--theme-textSecondary)]">
-          Messergebnisse und Berichte Ihrer Auftraege
+          Messergebnisse und Berichte Ihrer Aufträge
         </p>
       </div>
 

@@ -38,7 +38,7 @@ export default function StepIndividualRequest({
               Individuelle Preisgestaltung
             </h3>
             <p className="text-sm text-[var(--theme-textSecondary)]">
-              Sie haben {facilityCount} Anlagen ausgewaehlt. Fuer Auftraege mit mehr als 3 Anlagen
+              Sie haben {facilityCount} Anlagen ausgewählt. Für Aufträge mit mehr als 3 Anlagen
               erstellen wir Ihnen gerne ein individuelles Angebot mit attraktiven Konditionen.
               Unser Team wird sich nach Eingang Ihrer Anfrage zeitnah bei Ihnen melden.
             </p>
@@ -48,7 +48,7 @@ export default function StepIndividualRequest({
 
       <Textarea
         label="Anmerkungen (optional)"
-        placeholder="Haben Sie besondere Wuensche oder Anforderungen? Teilen Sie uns diese gerne mit..."
+        placeholder="Haben Sie besondere Wünsche oder Anforderungen? Teilen Sie uns diese gerne mit..."
         value={notes}
         onChange={(e) => onChange(e.target.value)}
       />

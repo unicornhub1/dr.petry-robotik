@@ -36,47 +36,52 @@ export default function AdminOverviewPage() {
   const [approvingId, setApprovingId] = useState<string | null>(null)
 
   const fetchData = async () => {
-    const supabase = createClient()
+    try {
+      const supabase = createClient()
 
-    const { count: totalUsers } = await supabase
-      .from('profiles')
-      .select('*', { count: 'exact', head: true })
+      const { count: totalUsers } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
 
-    const { count: pendingApproval } = await supabase
-      .from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .eq('is_approved', false)
-      .eq('is_admin', false)
+      const { count: pendingApproval } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_approved', false)
+        .eq('is_admin', false)
 
-    const { count: openOrders } = await supabase
-      .from('orders')
-      .select('*', { count: 'exact', head: true })
-      .in('status', ['requested', 'confirmed', 'scheduled', 'measuring', 'individual_request'])
+      const { count: openOrders } = await supabase
+        .from('orders')
+        .select('*', { count: 'exact', head: true })
+        .in('status', ['requested', 'confirmed', 'scheduled', 'measuring', 'individual_request'])
 
-    setStats({
-      totalUsers: totalUsers ?? 0,
-      pendingApproval: pendingApproval ?? 0,
-      openOrders: openOrders ?? 0,
-    })
+      setStats({
+        totalUsers: totalUsers ?? 0,
+        pendingApproval: pendingApproval ?? 0,
+        openOrders: openOrders ?? 0,
+      })
 
-    const { data: pending } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('is_approved', false)
-      .eq('is_admin', false)
-      .order('created_at', { ascending: false })
-      .limit(10)
+      const { data: pending } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('is_approved', false)
+        .eq('is_admin', false)
+        .order('created_at', { ascending: false })
+        .limit(10)
 
-    setPendingUsers(pending ?? [])
+      setPendingUsers((pending as unknown as Profile[]) ?? [])
 
-    const { data: orders } = await supabase
-      .from('orders')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(8)
+      const { data: orders } = await supabase
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(8)
 
-    setRecentOrders(orders ?? [])
-    setLoading(false)
+      setRecentOrders(orders ?? [])
+    } catch (err) {
+      console.error('Failed to fetch:', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -123,7 +128,7 @@ export default function AdminOverviewPage() {
       href: '/admin/users',
     },
     {
-      label: 'Offene Auftraege',
+      label: 'Offene Aufträge',
       value: stats.openOrders,
       icon: ClipboardList,
       href: '/admin/orders',
@@ -154,9 +159,9 @@ export default function AdminOverviewPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-[var(--theme-text)]">Admin Uebersicht</h1>
+        <h1 className="text-2xl font-bold text-[var(--theme-text)]">Admin Übersicht</h1>
         <p className="text-[var(--theme-textSecondary)]">
-          Willkommen zurueck, {displayName}
+          Willkommen zurück, {displayName}
         </p>
       </div>
 
@@ -259,12 +264,12 @@ export default function AdminOverviewPage() {
       {/* Recent Orders */}
       <div className="bg-[var(--theme-surface)] rounded-2xl p-6 border border-[var(--theme-border)]">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="font-semibold text-[var(--theme-text)]">Letzte Auftraege</h3>
+          <h3 className="font-semibold text-[var(--theme-text)]">Letzte Aufträge</h3>
           <Link
             href="/admin/orders"
             className="text-sm text-[var(--accent-primary)] hover:underline flex items-center gap-1"
           >
-            Alle Auftraege
+            Alle Aufträge
             <ArrowRight size={14} />
           </Link>
         </div>
@@ -272,7 +277,7 @@ export default function AdminOverviewPage() {
         {recentOrders.length === 0 ? (
           <div className="py-8 text-center">
             <ClipboardList size={24} className="mx-auto text-[var(--theme-textTertiary)] mb-2" />
-            <p className="text-sm text-[var(--theme-textTertiary)]">Keine Auftraege vorhanden</p>
+            <p className="text-sm text-[var(--theme-textTertiary)]">Keine Aufträge vorhanden</p>
           </div>
         ) : (
           <div className="space-y-3">

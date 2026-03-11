@@ -48,7 +48,7 @@ export default function StepSummary({
       <div>
         <h2 className="text-lg font-semibold text-[var(--theme-text)]">Zusammenfassung</h2>
         <p className="text-sm text-[var(--theme-textSecondary)]">
-          Pruefen Sie Ihre Angaben vor dem Absenden
+          Prüfen Sie Ihre Angaben vor dem Absenden
         </p>
       </div>
 
@@ -169,7 +169,7 @@ export default function StepSummary({
           className="mt-0.5 w-4 h-4 rounded border-[var(--theme-border)] accent-[var(--accent-primary)]"
         />
         <span className="text-sm text-[var(--theme-textSecondary)]">
-          Ich akzeptiere die Allgemeinen Geschaeftsbedingungen und habe die Datenschutzerklaerung gelesen.
+          Ich akzeptiere die Allgemeinen Geschäftsbedingungen und habe die Datenschutzerklärung gelesen.
         </span>
       </label>
 

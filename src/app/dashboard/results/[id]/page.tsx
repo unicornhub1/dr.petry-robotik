@@ -27,28 +27,33 @@ export default function ResultDetailPage() {
     if (!resultId) return
 
     const fetchResult = async () => {
-      const supabase = createClient()
+      try {
+        const supabase = createClient()
 
-      const [{ data: resultData }, { data: filesData }] = await Promise.all([
-        supabase
-          .from('results')
-          .select('*, orders(order_number)')
-          .eq('id', resultId)
-          .single(),
-        supabase
-          .from('result_files')
-          .select('*')
-          .eq('result_id', resultId)
-          .order('created_at', { ascending: true }),
-      ])
+        const [{ data: resultData }, { data: filesData }] = await Promise.all([
+          supabase
+            .from('results')
+            .select('*, orders(order_number)')
+            .eq('id', resultId)
+            .single(),
+          supabase
+            .from('result_files')
+            .select('*')
+            .eq('result_id', resultId)
+            .order('created_at', { ascending: true }),
+        ])
 
-      if (resultData) {
-        const orders = (resultData as Record<string, unknown>).orders as Record<string, unknown> | null
-        setOrderNumber((orders?.order_number as string) ?? '')
-        setResult(resultData as Result)
+        if (resultData) {
+          const orders = (resultData as Record<string, unknown>).orders as Record<string, unknown> | null
+          setOrderNumber((orders?.order_number as string) ?? '')
+          setResult(resultData as Result)
+        }
+        setFiles(filesData ?? [])
+      } catch (err) {
+        console.error('Failed to fetch:', err)
+      } finally {
+        setLoading(false)
       }
-      setFiles(filesData ?? [])
-      setLoading(false)
     }
 
     fetchResult()

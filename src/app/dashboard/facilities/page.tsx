@@ -24,15 +24,20 @@ export default function FacilitiesPage() {
     if (!user) return
 
     const fetchFacilities = async () => {
-      const supabase = createClient()
-      const { data } = await supabase
-        .from('facilities')
-        .select('*, facility_types(name)')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
+      try {
+        const supabase = createClient()
+        const { data } = await supabase
+          .from('facilities')
+          .select('*, facility_types(name)')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
 
-      setFacilities((data as FacilityWithType[]) ?? [])
-      setLoading(false)
+        setFacilities((data as FacilityWithType[]) ?? [])
+      } catch (err) {
+        console.error('Failed to fetch:', err)
+      } finally {
+        setLoading(false)
+      }
     }
 
     fetchFacilities()

@@ -33,9 +33,9 @@ export default function StepSelectPackages({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-[var(--theme-text)]">Messpaket waehlen</h2>
+        <h2 className="text-lg font-semibold text-[var(--theme-text)]">Messpaket wählen</h2>
         <p className="text-sm text-[var(--theme-textSecondary)]">
-          Waehlen Sie fuer jede Anlage ein Messpaket
+          Wählen Sie für jede Anlage ein Messpaket
         </p>
       </div>
 

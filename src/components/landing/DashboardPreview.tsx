@@ -18,11 +18,9 @@ export default function DashboardPreview() {
       <div className="absolute inset-0 w-full h-full">
         <LiquidEther
           colors={['#da4e24', '#ff6b3d', '#0098f3']}
-          speed={0.2}
-          mouseInfluence={0.4}
-          noiseScale={1.2}
-          noiseStrength={0.5}
-          autoAnimate
+          autoDemo
+          autoSpeed={0.2}
+          autoIntensity={0.4}
         />
         {/* Overlay for readability */}
         <div className="absolute inset-0 bg-[var(--theme-background)]/60" />

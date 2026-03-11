@@ -25,26 +25,36 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
+  // IMPORTANT: getUser() refreshes the token and sets new cookies
+  // Do NOT use getSession() here - it doesn't refresh tokens
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
   // Public routes — no auth needed
-  const publicPaths = ['/', '/onboarding', '/login', '/blog', '/produkt', '/kontakt', '/auth/callback']
+  const publicPaths = ['/', '/onboarding', '/login', '/blog', '/produkt', '/kontakt', '/auth/callback', '/api']
   const isPublic = publicPaths.some(
     (p) =>
       request.nextUrl.pathname === p ||
       request.nextUrl.pathname.startsWith(p + '/')
   )
 
+  // Always return supabaseResponse for public routes (preserves refreshed cookies)
   if (isPublic) return supabaseResponse
 
-  // Not logged in → redirect to login
+  // Not logged in → redirect to login (but still forward cookies)
   if (!user) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     url.searchParams.set('redirect', request.nextUrl.pathname)
-    return NextResponse.redirect(url)
+    const redirectResponse = NextResponse.redirect(url)
+
+    // Forward any refreshed cookies from supabase
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie.name, cookie.value)
+    })
+
+    return redirectResponse
   }
 
   // Admin routes — check is_admin
@@ -56,7 +66,6 @@ export async function updateSession(request: NextRequest) {
       .single()
 
     if (!profile?.is_admin) {
-      // Return 404 to hide admin area completely
       return NextResponse.json(null, { status: 404 })
     }
   }
@@ -73,7 +82,13 @@ export async function updateSession(request: NextRequest) {
       const url = request.nextUrl.clone()
       url.pathname = '/dashboard'
       url.searchParams.set('blocked', 'not_approved')
-      return NextResponse.redirect(url)
+      const redirectResponse = NextResponse.redirect(url)
+
+      supabaseResponse.cookies.getAll().forEach((cookie) => {
+        redirectResponse.cookies.set(cookie.name, cookie.value)
+      })
+
+      return redirectResponse
     }
   }
 

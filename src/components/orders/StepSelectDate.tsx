@@ -101,9 +101,9 @@ export default function StepSelectDate({
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-lg font-semibold text-[var(--theme-text)]">Wunschtermin waehlen</h2>
+        <h2 className="text-lg font-semibold text-[var(--theme-text)]">Wunschtermin wählen</h2>
         <p className="text-sm text-[var(--theme-textSecondary)]">
-          Waehlen Sie einen verfuegbaren Termin fuer die Messung
+          Wählen Sie einen verfügbaren Termin für die Messung
         </p>
       </div>
 

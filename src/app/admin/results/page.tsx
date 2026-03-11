@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { BarChart3, Trash2, Save, FileText } from 'lucide-react'
 import { Dropdown, Textarea, FileUpload, EmptyState, useToast } from '@/components/ui'
 import { createClient } from '@/lib/supabase/client'
-import type { Order, Result, ResultFile } from '@/lib/supabase/types'
+import type { Order, Result, ResultFile, Json } from '@/lib/supabase/types'
 
 interface OrderOption {
   value: string
@@ -34,19 +34,24 @@ export default function AdminResultsPage() {
 
   useEffect(() => {
     const fetchOrders = async () => {
-      const supabase = createClient()
-      const { data } = await supabase
-        .from('orders')
-        .select('id, order_number, status')
-        .in('status', ['completed', 'measuring', 'scheduled'])
-        .order('created_at', { ascending: false })
+      try {
+        const supabase = createClient()
+        const { data } = await supabase
+          .from('orders')
+          .select('id, order_number, status')
+          .in('status', ['completed', 'measuring', 'scheduled'])
+          .order('created_at', { ascending: false })
 
-      const options = (data ?? []).map((o: Record<string, unknown>) => ({
-        value: o.id as string,
-        label: `${o.order_number} (${o.status})`,
-      }))
-      setCompletedOrders(options)
-      setLoading(false)
+        const options = (data ?? []).map((o: Record<string, unknown>) => ({
+          value: o.id as string,
+          label: `${o.order_number} (${o.status})`,
+        }))
+        setCompletedOrders(options)
+      } catch (err) {
+        console.error('Failed to fetch:', err)
+      } finally {
+        setLoading(false)
+      }
     }
 
     fetchOrders()
@@ -176,9 +181,9 @@ export default function AdminResultsPage() {
       .eq('id', fileId)
 
     if (error) {
-      toastError('Fehler beim Loeschen')
+      toastError('Fehler beim Löschen')
     } else {
-      success('Datei geloescht')
+      success('Datei gelöscht')
       setResults((prev) =>
         prev.map((r) => ({
           ...r,
@@ -194,13 +199,13 @@ export default function AdminResultsPage() {
 
     // Update all results
     for (const result of results) {
-      let parsedData: Record<string, unknown> | null = null
+      let parsedData: Json | null = null
       const jd = jsonData[result.id]
       if (jd && jd.trim()) {
         try {
-          parsedData = JSON.parse(jd)
+          parsedData = JSON.parse(jd) as Json
         } catch {
-          toastError(`Ungueltiges JSON fuer Ergebnis ${result.id}`)
+          toastError(`Ungültiges JSON für Ergebnis ${result.id}`)
           setSaving(false)
           return
         }
@@ -227,8 +232,8 @@ export default function AdminResultsPage() {
       await supabase.from('notifications').insert({
         user_id: order.user_id,
         type: 'result_ready',
-        title: 'Ergebnisse verfuegbar',
-        body: `Die Ergebnisse fuer Auftrag ${order.order_number} sind jetzt verfuegbar.`,
+        title: 'Ergebnisse verfügbar',
+        body: `Die Ergebnisse für Auftrag ${order.order_number} sind jetzt verfügbar.`,
         link: `/dashboard/results/${selectedOrderId}`,
         is_read: false,
       })
@@ -257,19 +262,19 @@ export default function AdminResultsPage() {
       {/* Order Selection */}
       <div className="max-w-md">
         <Dropdown
-          label="Auftrag auswaehlen"
+          label="Auftrag auswählen"
           options={completedOrders}
           value={selectedOrderId}
           onChange={setSelectedOrderId}
-          placeholder="Auftrag waehlen..."
+          placeholder="Auftrag wählen..."
         />
       </div>
 
       {!selectedOrderId ? (
         <EmptyState
           icon={BarChart3}
-          title="Auftrag auswaehlen"
-          description="Waehlen Sie einen Auftrag, um Ergebnisse zu verwalten."
+          title="Auftrag auswählen"
+          description="Wählen Sie einen Auftrag, um Ergebnisse zu verwalten."
         />
       ) : (
         <div className="space-y-6">
@@ -364,7 +369,7 @@ export default function AdminResultsPage() {
                 {/* Create result if none exists yet */}
                 {!result && (
                   <p className="text-sm text-[var(--theme-textTertiary)] mt-2">
-                    Laden Sie eine Datei hoch, um ein Ergebnis fuer diese Position zu erstellen.
+                    Laden Sie eine Datei hoch, um ein Ergebnis für diese Position zu erstellen.
                   </p>
                 )}
               </motion.div>

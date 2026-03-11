@@ -46,7 +46,7 @@ export default function StepRegistration({
 
   const organizationLabel =
     accountType === 'staedtisch'
-      ? 'Behoerde / Institution'
+      ? 'Behörde / Institution'
       : accountType === 'verein'
         ? 'Vereinsname'
         : 'Unternehmen'
@@ -57,7 +57,7 @@ export default function StepRegistration({
         Ihre Kontaktdaten
       </h2>
       <p className="text-sm text-[var(--theme-textSecondary)] mb-6">
-        Diese Angaben werden fuer Ihre Registrierung benoetigt.
+        Diese Angaben werden für Ihre Registrierung benötigt.
       </p>
 
       <div className="space-y-4">

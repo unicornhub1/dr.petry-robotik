@@ -34,14 +34,19 @@ export default function AdminEmailTemplatesPage() {
   const [saving, setSaving] = useState(false)
 
   const fetchTemplates = async () => {
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('email_templates')
-      .select('*')
-      .order('template_key', { ascending: true })
+    try {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('email_templates')
+        .select('*')
+        .order('template_key', { ascending: true })
 
-    setTemplates(data ?? [])
-    setLoading(false)
+      setTemplates(data ?? [])
+    } catch (err) {
+      console.error('Failed to fetch:', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -92,7 +97,7 @@ export default function AdminEmailTemplatesPage() {
       .eq('id', template.id)
 
     if (error) {
-      toastError('Fehler beim Aendern')
+      toastError('Fehler beim Ändern')
     } else {
       success(template.is_active ? 'Template deaktiviert' : 'Template aktiviert')
       fetchTemplates()
@@ -116,7 +121,7 @@ export default function AdminEmailTemplatesPage() {
   const columns = [
     { key: 'template_key', label: 'Template Key' },
     { key: 'subject', label: 'Betreff' },
-    { key: 'recipient_type', label: 'Empfaenger' },
+    { key: 'recipient_type', label: 'Empfänger' },
     { key: 'status', label: 'Status' },
     { key: 'actions', label: '' },
   ]
@@ -223,7 +228,7 @@ export default function AdminEmailTemplatesPage() {
           {/* Available Variables */}
           <div className="p-3 rounded-lg bg-[var(--theme-background)] border border-[var(--theme-border)]">
             <p className="text-xs font-medium text-[var(--theme-textSecondary)] mb-2">
-              Verfuegbare Variablen:
+              Verfügbare Variablen:
             </p>
             <div className="flex flex-wrap gap-2">
               {AVAILABLE_VARIABLES.map((v) => (

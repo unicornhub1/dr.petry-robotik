@@ -34,7 +34,7 @@ export default function StepConfirmation({ email, onResend, isResending }: StepC
           Fast geschafft!
         </h2>
         <p className="text-[var(--theme-textSecondary)] mb-2 text-sm">
-          Wir haben einen Bestaedigungslink an folgende Adresse gesendet:
+          Wir haben einen Bestätigungslink an folgende Adresse gesendet:
         </p>
         <p className="font-semibold text-[var(--theme-text)] mb-6 text-sm break-all">
           {email}
@@ -45,7 +45,7 @@ export default function StepConfirmation({ email, onResend, isResending }: StepC
           style={{ background: 'var(--theme-surface)', border: '1px solid var(--theme-border)' }}
         >
           Klicken Sie auf den Link in der E-Mail, um Ihr Konto zu aktivieren.
-          Pruefen Sie auch Ihren Spam-Ordner.
+          Prüfen Sie auch Ihren Spam-Ordner.
         </div>
 
         <div>

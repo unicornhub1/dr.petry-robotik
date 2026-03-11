@@ -114,7 +114,7 @@ export default function ProfilePage() {
       <div>
         <h1 className="text-2xl font-bold text-[var(--theme-text)]">Profil</h1>
         <p className="text-[var(--theme-textSecondary)]">
-          Verwalten Sie Ihre persoenlichen Daten
+          Verwalten Sie Ihre persönlichen Daten
         </p>
       </div>
 
@@ -153,7 +153,7 @@ export default function ProfilePage() {
       >
         <div className="flex items-center gap-3 mb-4">
           <Building2 size={20} className="text-[var(--theme-textSecondary)]" />
-          <h2 className="text-lg font-semibold text-[var(--theme-text)]">Persoenliche Daten</h2>
+          <h2 className="text-lg font-semibold text-[var(--theme-text)]">Persönliche Daten</h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
@@ -203,7 +203,7 @@ export default function ProfilePage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">
             <Input
-              label="Strasse und Hausnummer"
+              label="Straße und Hausnummer"
               value={form.address_street}
               onChange={(e) => handleChange('address_street', e.target.value)}
             />
@@ -259,7 +259,7 @@ export default function ProfilePage() {
           >
             <div className="sm:col-span-2">
               <Input
-                label="Strasse und Hausnummer"
+                label="Straße und Hausnummer"
                 value={form.billing_street}
                 onChange={(e) => handleChange('billing_street', e.target.value)}
               />

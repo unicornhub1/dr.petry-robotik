@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ClipboardList } from 'lucide-react'
-import { Table, Button, EmptyState, StatusBadge, PriceDisplay, BlurredOverlay } from '@/components/ui'
+import { Table, Button, EmptyState, StatusBadge, PriceDisplay } from '@/components/ui'
 import { useAuth } from '@/lib/auth/auth-context'
 import { createClient } from '@/lib/supabase/client'
 import type { Order } from '@/lib/supabase/types'
@@ -20,15 +20,20 @@ export default function OrdersPage() {
     if (!user) return
 
     const fetchOrders = async () => {
-      const supabase = createClient()
-      const { data } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
+      try {
+        const supabase = createClient()
+        const { data } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
 
-      setOrders(data ?? [])
-      setLoading(false)
+        setOrders(data ?? [])
+      } catch (err) {
+        console.error('Failed to fetch:', err)
+      } finally {
+        setLoading(false)
+      }
     }
 
     fetchOrders()
@@ -83,29 +88,26 @@ export default function OrdersPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--theme-text)]">Auftraege</h1>
+          <h1 className="text-2xl font-bold text-[var(--theme-text)]">Aufträge</h1>
           <p className="text-[var(--theme-textSecondary)]">
-            Verwalten Sie Ihre Messauftraege
+            Verwalten Sie Ihre Messaufträge
           </p>
         </div>
-        <div className="relative">
+        {isApproved && (
           <Button
             variant="primary"
             onClick={() => router.push('/dashboard/orders/new')}
           >
             Neuer Auftrag
           </Button>
-          {!isApproved && (
-            <BlurredOverlay message="Account-Freigabe erforderlich" />
-          )}
-        </div>
+        )}
       </div>
 
       {/* Content */}
       {orders.length === 0 ? (
         <EmptyState
           icon={ClipboardList}
-          title="Keine Auftraege vorhanden"
+          title="Keine Aufträge vorhanden"
           description="Erstellen Sie Ihren ersten Messauftrag."
           action={
             isApproved

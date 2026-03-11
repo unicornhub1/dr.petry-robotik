@@ -29,8 +29,8 @@ export default function AdminNotificationsPage() {
         .eq('is_admin', false)
         .order('last_name', { ascending: true })
 
-      setUsers(data ?? [])
-      setFilteredUsers(data ?? [])
+      setUsers((data as unknown as Profile[]) ?? [])
+      setFilteredUsers((data as unknown as Profile[]) ?? [])
     }
 
     fetchUsers()
@@ -59,7 +59,7 @@ export default function AdminNotificationsPage() {
     }
 
     if (recipientMode === 'single' && !selectedUserId) {
-      toastError('Bitte einen Empfaenger auswaehlen')
+      toastError('Bitte einen Empfänger auswählen')
       return
     }
 
@@ -124,7 +124,7 @@ export default function AdminNotificationsPage() {
         <div className="space-y-5">
           {/* Recipient Mode */}
           <Dropdown
-            label="Empfaenger"
+            label="Empfänger"
             options={recipientOptions}
             value={recipientMode}
             onChange={(v) => {
@@ -144,11 +144,11 @@ export default function AdminNotificationsPage() {
                 leftIcon={<Search size={16} />}
               />
               <Dropdown
-                label="Nutzer auswaehlen"
+                label="Nutzer auswählen"
                 options={userOptions}
                 value={selectedUserId}
                 onChange={setSelectedUserId}
-                placeholder="Nutzer waehlen..."
+                placeholder="Nutzer wählen..."
               />
             </div>
           )}
@@ -176,7 +176,7 @@ export default function AdminNotificationsPage() {
                 ? `Wird an ${users.length} Kunden gesendet`
                 : selectedUserId
                   ? `Wird an 1 Kunden gesendet`
-                  : 'Kein Empfaenger ausgewaehlt'}
+                  : 'Kein Empfänger ausgewählt'}
             </p>
           </div>
 

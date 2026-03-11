@@ -45,43 +45,48 @@ export default function AdminSchedulePage() {
   const [overrideSaving, setOverrideSaving] = useState(false)
 
   const fetchData = async () => {
-    const supabase = createClient()
+    try {
+      const supabase = createClient()
 
-    const { data: templates } = await supabase
-      .from('schedule_templates')
-      .select('*')
-      .order('day_of_week', { ascending: true })
+      const { data: templates } = await supabase
+        .from('schedule_templates')
+        .select('*')
+        .order('day_of_week', { ascending: true })
 
-    // Build week days, filling in defaults for missing days
-    const days: WeekDay[] = []
-    for (let d = 0; d < 7; d++) {
-      const existing = (templates ?? []).find((t) => t.day_of_week === d)
-      if (existing) {
-        days.push({
-          id: existing.id,
-          day_of_week: existing.day_of_week,
-          start_time: existing.start_time,
-          end_time: existing.end_time,
-          is_active: existing.is_active,
-        })
-      } else {
-        days.push({
-          day_of_week: d,
-          start_time: '08:00',
-          end_time: '17:00',
-          is_active: false,
-        })
+      // Build week days, filling in defaults for missing days
+      const days: WeekDay[] = []
+      for (let d = 0; d < 7; d++) {
+        const existing = (templates ?? []).find((t) => t.day_of_week === d)
+        if (existing) {
+          days.push({
+            id: existing.id,
+            day_of_week: existing.day_of_week,
+            start_time: existing.start_time,
+            end_time: existing.end_time,
+            is_active: existing.is_active,
+          })
+        } else {
+          days.push({
+            day_of_week: d,
+            start_time: '08:00',
+            end_time: '17:00',
+            is_active: false,
+          })
+        }
       }
+      setWeekDays(days)
+
+      const { data: overridesData } = await supabase
+        .from('schedule_overrides')
+        .select('*')
+        .order('date_start', { ascending: true })
+
+      setOverrides(overridesData ?? [])
+    } catch (err) {
+      console.error('Failed to fetch:', err)
+    } finally {
+      setLoading(false)
     }
-    setWeekDays(days)
-
-    const { data: overridesData } = await supabase
-      .from('schedule_overrides')
-      .select('*')
-      .order('date_start', { ascending: true })
-
-    setOverrides(overridesData ?? [])
-    setLoading(false)
   }
 
   useEffect(() => {
@@ -152,7 +157,7 @@ export default function AdminSchedulePage() {
     if (error) {
       toastError('Fehler beim Erstellen')
     } else {
-      success('Abweichung hinzugefuegt')
+      success('Abweichung hinzugefügt')
       setOverrideModalOpen(false)
       setOverrideForm(emptyOverrideForm)
       fetchData()
@@ -168,9 +173,9 @@ export default function AdminSchedulePage() {
       .eq('id', id)
 
     if (error) {
-      toastError('Fehler beim Loeschen')
+      toastError('Fehler beim Löschen')
     } else {
-      success('Abweichung geloescht')
+      success('Abweichung gelöscht')
       setOverrides((prev) => prev.filter((o) => o.id !== id))
     }
   }
@@ -209,7 +214,7 @@ export default function AdminSchedulePage() {
     ),
     status: (
       <Badge variant={o.is_blocked ? 'error' : 'success'} size="sm">
-        {o.is_blocked ? 'Gesperrt' : 'Verfuegbar'}
+        {o.is_blocked ? 'Gesperrt' : 'Verfügbar'}
       </Badge>
     ),
     times: (
@@ -221,7 +226,7 @@ export default function AdminSchedulePage() {
       <button
         onClick={() => handleDeleteOverride(o.id)}
         className="p-1.5 rounded-lg text-[var(--color-error)] hover:bg-[var(--color-error)]/10 transition-colors"
-        title="Loeschen"
+        title="Löschen"
       >
         <Trash2 size={14} />
       </button>
@@ -310,7 +315,7 @@ export default function AdminSchedulePage() {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-[var(--accent-primary)] text-white hover:opacity-90 transition-opacity"
           >
             <Plus size={16} />
-            Abweichung hinzufuegen
+            Abweichung hinzufügen
           </button>
         </div>
 
@@ -318,7 +323,7 @@ export default function AdminSchedulePage() {
           <EmptyState
             icon={CalendarDays}
             title="Keine Abweichungen"
-            description="Feiertage oder Sondersperrungen hinzufuegen."
+            description="Feiertage oder Sondersperrungen hinzufügen."
           />
         ) : (
           <motion.div
@@ -376,7 +381,7 @@ export default function AdminSchedulePage() {
               onChange={(e) => setOverrideForm({ ...overrideForm, is_blocked: e.target.checked })}
               className="w-4 h-4 rounded border-[var(--theme-border)] accent-[var(--accent-primary)]"
             />
-            <span className="text-sm text-[var(--theme-text)]">Gesperrt (keine Termine moeglich)</span>
+            <span className="text-sm text-[var(--theme-text)]">Gesperrt (keine Termine möglich)</span>
           </label>
           <div className="flex justify-end gap-3 pt-4">
             <button

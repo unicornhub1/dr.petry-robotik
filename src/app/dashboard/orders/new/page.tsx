@@ -43,26 +43,31 @@ export default function NewOrderPage() {
     if (!user) return
 
     const fetchData = async () => {
-      const supabase = createClient()
+      try {
+        const supabase = createClient()
 
-      const [{ data: fac }, { data: pkg }, { data: rules }] = await Promise.all([
-        supabase
-          .from('facilities')
-          .select('*, facility_types(name)')
-          .eq('user_id', user.id)
-          .order('name'),
-        supabase
-          .from('packages')
-          .select('*')
-          .eq('is_active', true)
-          .order('sort_order'),
-        supabase.from('pricing_rules').select('*').order('min_facilities'),
-      ])
+        const [{ data: fac }, { data: pkg }, { data: rules }] = await Promise.all([
+          supabase
+            .from('facilities')
+            .select('*, facility_types(name)')
+            .eq('user_id', user.id)
+            .order('name'),
+          supabase
+            .from('packages')
+            .select('*')
+            .eq('is_active', true)
+            .order('sort_order'),
+          supabase.from('pricing_rules').select('*').order('min_facilities'),
+        ])
 
-      setFacilities((fac as FacilityWithType[]) ?? [])
-      setPackages(pkg ?? [])
-      setPricingRules(rules ?? [])
-      setLoading(false)
+        setFacilities((fac as FacilityWithType[]) ?? [])
+        setPackages(pkg ?? [])
+        setPricingRules(rules ?? [])
+      } catch (err) {
+        console.error('Failed to fetch:', err)
+      } finally {
+        setLoading(false)
+      }
     }
 
     fetchData()
@@ -155,9 +160,9 @@ export default function NewOrderPage() {
     const supabase = createClient()
 
     // Create order
-    const orderData: Record<string, unknown> = {
+    const orderData = {
       user_id: user.id,
-      status: isIndividual ? 'individual_request' : 'requested',
+      status: (isIndividual ? 'individual_request' : 'requested') as import('@/lib/supabase/types').OrderStatus,
       total_price: isIndividual ? null : totalPrice,
       discount_percent: isIndividual ? null : discountPercent,
       notes: notes || null,
@@ -351,7 +356,7 @@ export default function NewOrderPage() {
       <div>
         <h1 className="text-2xl font-bold text-[var(--theme-text)]">Neuer Messauftrag</h1>
         <p className="text-[var(--theme-textSecondary)]">
-          Konfigurieren Sie Ihren Messauftrag Schritt fuer Schritt
+          Konfigurieren Sie Ihren Messauftrag Schritt für Schritt
         </p>
       </div>
 
@@ -379,7 +384,7 @@ export default function NewOrderPage() {
             onClick={handlePrev}
             disabled={currentStep === 0}
           >
-            Zurueck
+            Zurück
           </Button>
           <Button
             variant="primary"

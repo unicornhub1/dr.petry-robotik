@@ -24,9 +24,9 @@ export default function StepSelectFacilities({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-[var(--theme-text)]">Anlagen auswaehlen</h2>
+          <h2 className="text-lg font-semibold text-[var(--theme-text)]">Anlagen auswählen</h2>
           <p className="text-sm text-[var(--theme-textSecondary)]">
-            Waehlen Sie die Sportanlagen fuer Ihren Messauftrag
+            Wählen Sie die Sportanlagen für Ihren Messauftrag
           </p>
         </div>
         <Link
@@ -99,7 +99,7 @@ export default function StepSelectFacilities({
       )}
 
       <p className="text-xs text-[var(--theme-textTertiary)]">
-        {selectedIds.length} Anlage{selectedIds.length !== 1 ? 'n' : ''} ausgewaehlt
+        {selectedIds.length} Anlage{selectedIds.length !== 1 ? 'n' : ''} ausgewählt
         {selectedIds.length > 3 && ' (Individualanfrage ab 4 Anlagen)'}
       </p>
     </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/lib/supabase/types'
@@ -21,6 +21,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const initialized = useRef(false)
 
   const fetchProfile = useCallback(async (userId: string) => {
     const supabase = createClient()
@@ -31,10 +32,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .single()
 
     if (error) {
-      console.error('Error fetching profile:', error)
+      console.error('Error fetching profile:', error.message, error.code, error.details)
       setProfile(null)
     } else {
-      setProfile(data)
+      setProfile(data as unknown as Profile)
     }
   }, [])
 
@@ -45,26 +46,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user, fetchProfile])
 
   useEffect(() => {
+    if (initialized.current) return
+    initialized.current = true
+
     const supabase = createClient()
 
-    // Get initial session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        await fetchProfile(session.user.id)
-      }
-      setIsLoading(false)
-    })
-
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setUser(session?.user ?? null)
-        if (session?.user) {
-          await fetchProfile(session.user.id)
-        } else {
-          setProfile(null)
+    // Use getUser() for secure server-verified session
+    const initAuth = async () => {
+      try {
+        const { data: { user: authUser } } = await supabase.auth.getUser()
+        setUser(authUser)
+        if (authUser) {
+          await fetchProfile(authUser.id)
         }
+      } catch {
+        setUser(null)
+        setProfile(null)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    initAuth()
+
+    // Listen for auth state changes (login, logout, token refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_OUT') {
+          setUser(null)
+          setProfile(null)
+          return
+        }
+
+        if (session?.user) {
+          setUser(session.user)
+
+          // Only fetch profile on initial sign-in or token refresh
+          if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+            await fetchProfile(session.user.id)
+          }
+        }
+
         setIsLoading(false)
       }
     )
@@ -73,6 +95,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       subscription.unsubscribe()
     }
   }, [fetchProfile])
+
+  // Refresh session when tab becomes visible again
+  useEffect(() => {
+    let refreshing = false
+
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState !== 'visible' || refreshing) return
+      refreshing = true
+
+      try {
+        const supabase = createClient()
+        const { data: { user: refreshedUser }, error } = await supabase.auth.getUser()
+
+        if (error || !refreshedUser) {
+          if (user) {
+            setUser(null)
+            setProfile(null)
+          }
+          return
+        }
+
+        setUser(refreshedUser)
+        await fetchProfile(refreshedUser.id)
+      } finally {
+        refreshing = false
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [user, fetchProfile])
 
   const signOut = async () => {
     const supabase = createClient()

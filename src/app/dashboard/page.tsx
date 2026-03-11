@@ -23,7 +23,7 @@ interface DashboardStats {
 }
 
 export default function DashboardPage() {
-  const { user, profile, isApproved } = useAuth()
+  const { user, profile, isApproved, isLoading: authLoading } = useAuth()
   const [stats, setStats] = useState<DashboardStats>({
     facilitiesCount: 0,
     activeOrdersCount: 0,
@@ -37,63 +37,67 @@ export default function DashboardPage() {
     if (!user) return
 
     const fetchDashboardData = async () => {
-      const supabase = createClient()
+      try {
+        const supabase = createClient()
 
-      // Fetch facilities count
-      const { count: facilitiesCount } = await supabase
-        .from('facilities')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
+        // Fetch facilities count
+        const { count: facilitiesCount } = await supabase
+          .from('facilities')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
 
-      // Fetch active orders count
-      const { count: activeOrdersCount } = await supabase
-        .from('orders')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .in('status', ['requested', 'confirmed', 'scheduled', 'measuring', 'individual_request'])
+        // Fetch active orders count
+        const { count: activeOrdersCount } = await supabase
+          .from('orders')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .in('status', ['requested', 'confirmed', 'scheduled', 'measuring', 'individual_request'])
 
-      // Fetch new results count (results from last 30 days)
-      const thirtyDaysAgo = new Date()
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-      const { count: newResultsCount } = await supabase
-        .from('results')
-        .select('*, orders!inner(user_id)', { count: 'exact', head: true })
-        .eq('orders.user_id', user.id)
-        .gte('created_at', thirtyDaysAgo.toISOString())
+        // Fetch new results count (results from last 30 days)
+        const thirtyDaysAgo = new Date()
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+        const { count: newResultsCount } = await supabase
+          .from('results')
+          .select('*, orders!inner(user_id)', { count: 'exact', head: true })
+          .eq('orders.user_id', user.id)
+          .gte('created_at', thirtyDaysAgo.toISOString())
 
-      setStats({
-        facilitiesCount: facilitiesCount ?? 0,
-        activeOrdersCount: activeOrdersCount ?? 0,
-        newResultsCount: newResultsCount ?? 0,
-      })
+        setStats({
+          facilitiesCount: facilitiesCount ?? 0,
+          activeOrdersCount: activeOrdersCount ?? 0,
+          newResultsCount: newResultsCount ?? 0,
+        })
 
-      // Fetch recent orders
-      const { data: orders } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(5)
+        // Fetch recent orders
+        const { data: orders } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(5)
 
-      setRecentOrders(orders ?? [])
+        setRecentOrders(orders ?? [])
 
-      // Fetch recent messages
-      const { data: messages } = await supabase
-        .from('messages')
-        .select('*, orders!inner(order_number, user_id)')
-        .eq('orders.user_id', user.id)
-        .is('customer_read_at', null)
-        .neq('sender_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(5)
+        // Fetch recent messages
+        const { data: messages } = await supabase
+          .from('messages')
+          .select('*, orders!inner(order_number, user_id)')
+          .eq('orders.user_id', user.id)
+          .is('customer_read_at', null)
+          .neq('sender_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(5)
 
-      const mappedMessages = (messages ?? []).map((m: Record<string, unknown>) => ({
-        ...(m as Message),
-        order_number: (m.orders as Record<string, unknown>)?.order_number as string | undefined,
-      }))
-      setRecentMessages(mappedMessages)
-
-      setLoading(false)
+        const mappedMessages = (messages ?? []).map((m: Record<string, unknown>) => ({
+          ...(m as Message),
+          order_number: (m.orders as Record<string, unknown>)?.order_number as string | undefined,
+        }))
+        setRecentMessages(mappedMessages)
+      } catch (err) {
+        console.error('Failed to fetch:', err)
+      } finally {
+        setLoading(false)
+      }
     }
 
     fetchDashboardData()
@@ -111,7 +115,7 @@ export default function DashboardPage() {
       href: '/dashboard/facilities',
     },
     {
-      label: 'Aktive Auftraege',
+      label: 'Aktive Aufträge',
       value: stats.activeOrdersCount,
       icon: ClipboardList,
       href: '/dashboard/orders',
@@ -141,23 +145,36 @@ export default function DashboardPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-[var(--theme-text)]">Uebersicht</h1>
+        <h1 className="text-2xl font-bold text-[var(--theme-text)]">Übersicht</h1>
         <p className="text-[var(--theme-textSecondary)]">
-          Willkommen zurueck, {displayName}
+          Willkommen zurück, {displayName}
         </p>
       </div>
 
       {/* Approval Banner */}
-      {!isApproved && (
+      {!authLoading && !isApproved && (
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-3 p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20"
+          className="relative overflow-hidden rounded-2xl border border-amber-500/20 bg-gradient-to-r from-amber-500/5 via-amber-500/10 to-orange-500/5 p-5"
         >
-          <AlertTriangle size={20} className="text-yellow-600 dark:text-yellow-400 shrink-0" />
-          <p className="text-sm text-yellow-700 dark:text-yellow-300">
-            Ihr Account wird geprueft. Wir melden uns in Kuerze.
-          </p>
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center shrink-0">
+              <AlertTriangle size={20} className="text-amber-600 dark:text-amber-400" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-amber-700 dark:text-amber-300 mb-1">
+                Account-Freigabe ausstehend
+              </h3>
+              <p className="text-sm text-amber-600/80 dark:text-amber-400/70 leading-relaxed">
+                Ihr Account wird aktuell von unserem Team geprüft. Sobald die Freigabe erfolgt ist,
+                können Sie Messaufträge erstellen und alle Funktionen nutzen.
+                In der Zwischenzeit können Sie bereits Ihre Sportanlagen anlegen.
+              </p>
+            </div>
+          </div>
+          {/* Decorative gradient line */}
+          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-amber-500/0 via-amber-500/40 to-amber-500/0" />
         </motion.div>
       )}
 
@@ -204,7 +221,7 @@ export default function DashboardPage() {
         <div className="lg:col-span-2">
           <div className="bg-[var(--theme-surface)] rounded-2xl p-6 border border-[var(--theme-border)]">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="font-semibold text-[var(--theme-text)]">Letzte Auftraege</h3>
+              <h3 className="font-semibold text-[var(--theme-text)]">Letzte Aufträge</h3>
               <Link
                 href="/dashboard/orders"
                 className="text-sm text-[var(--accent-primary)] hover:underline flex items-center gap-1"
@@ -217,7 +234,7 @@ export default function DashboardPage() {
             {recentOrders.length === 0 ? (
               <EmptyState
                 icon={ClipboardList}
-                title="Keine Auftraege vorhanden"
+                title="Keine Aufträge vorhanden"
                 description="Erstellen Sie Ihren ersten Messauftrag."
                 action={{
                   label: 'Neuer Auftrag',

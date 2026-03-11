@@ -23,14 +23,19 @@ export default function AdminFacilityTypesPage() {
   const [saving, setSaving] = useState(false)
 
   const fetchTypes = async () => {
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('facility_types')
-      .select('*')
-      .order('sort_order', { ascending: true })
+    try {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('facility_types')
+        .select('*')
+        .order('sort_order', { ascending: true })
 
-    setTypes(data ?? [])
-    setLoading(false)
+      setTypes(data ?? [])
+    } catch (err) {
+      console.error('Failed to fetch:', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -100,7 +105,7 @@ export default function AdminFacilityTypesPage() {
       .eq('id', ft.id)
 
     if (error) {
-      toastError('Fehler beim Aendern')
+      toastError('Fehler beim Ändern')
     } else {
       success(ft.is_active ? 'Deaktiviert' : 'Aktiviert')
       fetchTypes()
@@ -204,7 +209,7 @@ export default function AdminFacilityTypesPage() {
             label="Name"
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
-            placeholder="z.B. Fussballplatz"
+            placeholder="z.B. Fußballplatz"
           />
           <Input
             label="Icon (Lucide Icon Name)"

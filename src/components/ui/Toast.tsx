@@ -49,7 +49,7 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
       <button
         onClick={() => onRemove(toast.id)}
         className="flex-shrink-0 p-0.5 rounded text-[var(--theme-textTertiary)] hover:text-[var(--theme-text)] transition-colors duration-[var(--transition-fast)]"
-        aria-label="Schliessen"
+        aria-label="Schließen"
       >
         <X size={14} />
       </button>

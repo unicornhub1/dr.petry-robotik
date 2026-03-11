@@ -21,14 +21,14 @@ const options: AccountTypeOption[] = [
   },
   {
     id: 'staedtisch',
-    label: 'Staedtisch',
-    description: 'Behoerde, Gemeinde oder oeffentliche Einrichtung',
+    label: 'Städtisch',
+    description: 'Behörde, Gemeinde oder öffentliche Einrichtung',
     icon: Building2,
   },
   {
     id: 'verein',
     label: 'Verein',
-    description: 'Eingetragener Verein oder gemeinnuetzige Organisation',
+    description: 'Eingetragener Verein oder gemeinnützige Organisation',
     icon: Users,
   },
   {
@@ -48,10 +48,10 @@ export default function StepAccountType({ selected, onSelect }: StepAccountTypeP
   return (
     <div>
       <h2 className="text-xl font-bold text-[var(--theme-text)] mb-2">
-        Welchen Kontotyp moechten Sie erstellen?
+        Welchen Kontotyp möchten Sie erstellen?
       </h2>
       <p className="text-sm text-[var(--theme-textSecondary)] mb-6">
-        Waehlen Sie die Kategorie, die am besten zu Ihnen passt.
+        Wählen Sie die Kategorie, die am besten zu Ihnen passt.
       </p>
 
       <div className="grid grid-cols-2 gap-4">
@@ -64,9 +64,6 @@ export default function StepAccountType({ selected, onSelect }: StepAccountTypeP
               key={option.id}
               type="button"
               onClick={() => onSelect(option.id)}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.08, ease: [0.4, 0, 0.2, 1] }}
               whileHover={{ y: -2 }}
               whileTap={{ scale: 0.98 }}
               className={`

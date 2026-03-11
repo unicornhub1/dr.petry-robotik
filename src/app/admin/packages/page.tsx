@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { Package, Plus, Pencil, ToggleLeft, ToggleRight } from 'lucide-react'
 import { Card, Modal, Input, Textarea, Dropdown, EmptyState, Badge, useToast } from '@/components/ui'
 import { createClient } from '@/lib/supabase/client'
-import type { Package as PackageType, MeasurementGrid } from '@/lib/supabase/types'
+import type { Package as PackageType, MeasurementGrid, Json } from '@/lib/supabase/types'
 
 function formatCents(cents: number): string {
   const euros = cents / 100
@@ -34,14 +34,19 @@ export default function AdminPackagesPage() {
   const [saving, setSaving] = useState(false)
 
   const fetchPackages = async () => {
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('packages')
-      .select('*')
-      .order('sort_order', { ascending: true })
+    try {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('packages')
+        .select('*')
+        .order('sort_order', { ascending: true })
 
-    setPackages(data ?? [])
-    setLoading(false)
+      setPackages(data ?? [])
+    } catch (err) {
+      console.error('Failed to fetch:', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -71,11 +76,11 @@ export default function AdminPackagesPage() {
     setSaving(true)
     const supabase = createClient()
 
-    let parsedFeatures: Record<string, unknown> = {}
+    let parsedFeatures: Json = {}
     try {
-      parsedFeatures = JSON.parse(form.features)
+      parsedFeatures = JSON.parse(form.features) as Json
     } catch {
-      toastError('Features JSON ist ungueltig')
+      toastError('Features JSON ist ungültig')
       setSaving(false)
       return
     }
@@ -128,7 +133,7 @@ export default function AdminPackagesPage() {
       .eq('id', pkg.id)
 
     if (error) {
-      toastError('Fehler beim Aendern')
+      toastError('Fehler beim Ändern')
     } else {
       success(pkg.is_active ? 'Paket deaktiviert' : 'Paket aktiviert')
       fetchPackages()
@@ -211,7 +216,7 @@ export default function AdminPackagesPage() {
                     <span className="text-[var(--theme-textSecondary)]">Raster</span>
                     <span className="text-[var(--theme-text)]">{pkg.grid_size}</span>
                   </div>
-                  {Object.keys(pkg.features).length > 0 && (
+                  {Object.keys(pkg.features as object).length > 0 && (
                     <div className="text-sm">
                       <span className="text-[var(--theme-textSecondary)]">Features:</span>
                       <pre className="mt-1 text-xs text-[var(--theme-textTertiary)] overflow-auto max-h-24">
@@ -272,7 +277,7 @@ export default function AdminPackagesPage() {
             placeholder="z.B. 299.00"
           />
           <Dropdown
-            label="Rastergroesse"
+            label="Rastergröße"
             options={[
               { value: '5m', label: '5m Raster' },
               { value: '10m', label: '10m Raster' },

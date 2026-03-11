@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
 import type { LucideIcon } from 'lucide-react'
+import Logo from '@/components/icons/Logo'
 
 export interface SidebarItem {
   label: string
@@ -32,17 +33,14 @@ export default function Sidebar({ items, title }: SidebarProps) {
 
   return (
     <aside className="fixed top-0 left-0 z-40 h-full w-16 md:w-64 bg-[var(--theme-surface)] border-r border-[var(--theme-border)] flex flex-col">
-      {/* Title */}
-      <div className="h-16 flex items-center px-4 border-b border-[var(--theme-border)] shrink-0">
-        <span className="hidden md:block font-semibold text-[var(--theme-text)] truncate text-sm">
-          {title}
-        </span>
-        {/* Icon placeholder on mobile so header has consistent height */}
-        <div className="md:hidden w-8 h-8 rounded-lg flex items-center justify-center bg-[var(--theme-background)]">
-          <span className="text-xs font-bold text-[var(--theme-textSecondary)]">
-            {title.slice(0, 2).toUpperCase()}
-          </span>
-        </div>
+      {/* Logo + Title */}
+      <div className="h-16 flex items-center px-3 border-b border-[var(--theme-border)] shrink-0">
+        <Link href="/" className="hidden md:flex items-center gap-2 min-w-0">
+          <Logo className="h-7 w-auto shrink-0" />
+        </Link>
+        <Link href="/" className="md:hidden flex items-center justify-center w-10 h-10">
+          <Logo className="h-6 w-auto" showText={false} />
+        </Link>
       </div>
 
       {/* Navigation */}

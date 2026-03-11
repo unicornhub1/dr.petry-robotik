@@ -6,6 +6,7 @@ import { themeScript } from '@/lib/theme-script'
 import { LayoutWrapper } from '@/components/layout'
 import { siteConfig } from '@/lib/config'
 import { AuthProvider } from '@/lib/auth/auth-context'
+import { ToastProvider } from '@/components/ui/Toast'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -70,7 +71,9 @@ export default function RootLayout({
       >
         <ThemeProvider>
           <AuthProvider>
-            <LayoutWrapper>{children}</LayoutWrapper>
+            <ToastProvider>
+              <LayoutWrapper>{children}</LayoutWrapper>
+            </ToastProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

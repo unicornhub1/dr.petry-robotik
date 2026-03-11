@@ -38,40 +38,44 @@ export default function EditFacilityPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const supabase = createClient()
+      try {
+        const supabase = createClient()
 
-      const [{ data: types }, { data: facility }] = await Promise.all([
-        supabase
-          .from('facility_types')
-          .select('*')
-          .eq('is_active', true)
-          .order('sort_order'),
-        supabase
-          .from('facilities')
-          .select('*')
-          .eq('id', facilityId)
-          .single(),
-      ])
+        const [{ data: types }, { data: facility }] = await Promise.all([
+          supabase
+            .from('facility_types')
+            .select('*')
+            .eq('is_active', true)
+            .order('sort_order'),
+          supabase
+            .from('facilities')
+            .select('*')
+            .eq('id', facilityId)
+            .single(),
+        ])
 
-      setFacilityTypes(types ?? [])
+        setFacilityTypes(types ?? [])
 
-      if (facility) {
-        setForm({
-          name: facility.name,
-          type_id: facility.type_id,
-          latitude: facility.latitude ?? undefined,
-          longitude: facility.longitude ?? undefined,
-          address: facility.address ?? '',
-          length_m: facility.length_m?.toString() ?? '',
-          width_m: facility.width_m?.toString() ?? '',
-          mast_count: facility.mast_count?.toString() ?? '',
-          light_count: facility.light_count?.toString() ?? '',
-          light_type: (facility.light_type as '' | 'led' | 'conventional') ?? '',
-          measurement_grid: (facility.measurement_grid as '' | '5m' | '10m') ?? '',
-        })
+        if (facility) {
+          setForm({
+            name: facility.name,
+            type_id: facility.type_id,
+            latitude: facility.latitude ?? undefined,
+            longitude: facility.longitude ?? undefined,
+            address: facility.address ?? '',
+            length_m: facility.length_m?.toString() ?? '',
+            width_m: facility.width_m?.toString() ?? '',
+            mast_count: facility.mast_count?.toString() ?? '',
+            light_count: facility.light_count?.toString() ?? '',
+            light_type: (facility.light_type as '' | 'led' | 'conventional') ?? '',
+            measurement_grid: (facility.measurement_grid as '' | '5m' | '10m') ?? '',
+          })
+        }
+      } catch (err) {
+        console.error('Failed to fetch:', err)
+      } finally {
+        setLoading(false)
       }
-
-      setLoading(false)
     }
 
     fetchData()

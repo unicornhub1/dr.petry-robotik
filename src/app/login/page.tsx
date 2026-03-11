@@ -35,7 +35,8 @@ export default function LoginPage() {
       })
 
       if (authError) {
-        setError('Fehler beim Senden des Login-Links. Bitte versuchen Sie es erneut.')
+        console.error('Auth error:', authError.message, authError)
+        setError(`Fehler: ${authError.message}`)
       } else {
         setIsSent(true)
       }
@@ -75,7 +76,7 @@ export default function LoginPage() {
           className="flex items-center gap-2 text-sm text-[var(--theme-textSecondary)] hover:text-[var(--theme-text)] transition-colors"
         >
           <ArrowLeft size={16} />
-          Zurueck zur Startseite
+          Zurück zur Startseite
         </Link>
       </motion.div>
 
@@ -111,7 +112,7 @@ export default function LoginPage() {
                   transition={{ duration: 0.25 }}
                 >
                   <h1 className="text-2xl font-bold text-[var(--theme-text)] mb-2 text-center">
-                    Willkommen zurueck
+                    Willkommen zurück
                   </h1>
                   <p className="text-[var(--theme-textSecondary)] text-center mb-8 text-sm">
                     Wir senden Ihnen einen sicheren Login-Link an Ihre E-Mail-Adresse.
@@ -188,7 +189,7 @@ export default function LoginPage() {
                   </p>
 
                   <p className="text-xs text-[var(--theme-textTertiary)] mb-4">
-                    Bitte pruefen Sie auch Ihren Spam-Ordner.
+                    Bitte prüfen Sie auch Ihren Spam-Ordner.
                   </p>
 
                   <button

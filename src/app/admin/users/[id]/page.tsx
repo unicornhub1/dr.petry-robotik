@@ -37,30 +37,35 @@ export default function AdminUserDetailPage() {
     if (!userId) return
 
     const fetchUser = async () => {
-      const supabase = createClient()
+      try {
+        const supabase = createClient()
 
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single()
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single()
 
-      setProfile(profileData)
+        setProfile(profileData as unknown as Profile)
 
-      const { count: fCount } = await supabase
-        .from('facilities')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId)
+        const { count: fCount } = await supabase
+          .from('facilities')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', userId)
 
-      setFacilitiesCount(fCount ?? 0)
+        setFacilitiesCount(fCount ?? 0)
 
-      const { count: oCount } = await supabase
-        .from('orders')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId)
+        const { count: oCount } = await supabase
+          .from('orders')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', userId)
 
-      setOrdersCount(oCount ?? 0)
-      setLoading(false)
+        setOrdersCount(oCount ?? 0)
+      } catch (err) {
+        console.error('Failed to fetch:', err)
+      } finally {
+        setLoading(false)
+      }
     }
 
     fetchUser()
@@ -133,7 +138,7 @@ export default function AdminUserDetailPage() {
     { label: 'Organisation', value: profile.organization ?? '-' },
     { label: 'Position', value: profile.position ?? '-' },
     { label: 'USt-ID', value: profile.vat_id ?? '-' },
-    { label: 'Strasse', value: profile.address_street ?? '-' },
+    { label: 'Straße', value: profile.address_street ?? '-' },
     { label: 'PLZ', value: profile.address_zip ?? '-' },
     { label: 'Stadt', value: profile.address_city ?? '-' },
     { label: 'Land', value: profile.address_country },
@@ -185,7 +190,7 @@ export default function AdminUserDetailPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-[var(--theme-text)]">{ordersCount}</p>
-              <p className="text-xs text-[var(--theme-textSecondary)]">Auftraege</p>
+              <p className="text-xs text-[var(--theme-textSecondary)]">Aufträge</p>
             </div>
           </div>
         </Card>

@@ -54,7 +54,7 @@ export default function StepCalculation({
       <div>
         <h2 className="text-lg font-semibold text-[var(--theme-text)]">Preiskalkulation</h2>
         <p className="text-sm text-[var(--theme-textSecondary)]">
-          Uebersicht der Kosten fuer Ihren Messauftrag
+          Übersicht der Kosten für Ihren Messauftrag
         </p>
       </div>
 

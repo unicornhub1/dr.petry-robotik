@@ -16,7 +16,7 @@ interface CalendarProps {
 const WEEKDAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
 
 const MONTHS = [
-  'Januar', 'Februar', 'Maerz', 'April', 'Mai', 'Juni',
+  'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
   'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember',
 ]
 
@@ -69,7 +69,7 @@ export default function Calendar({
       return {
         bg: 'bg-[var(--color-warning)]',
         text: 'text-white',
-        label: 'Ausgewaehlt',
+        label: 'Ausgewählt',
         clickable: true,
       }
     }
@@ -93,7 +93,7 @@ export default function Calendar({
       return {
         bg: 'bg-[var(--color-success)]/15 hover:bg-[var(--color-success)]/30',
         text: 'text-[var(--color-success)]',
-        label: 'Verfuegbar',
+        label: 'Verfügbar',
         clickable: true,
       }
     }
@@ -124,7 +124,7 @@ export default function Calendar({
         <button
           onClick={nextMonth}
           className="p-1.5 rounded-[var(--radius-md)] text-[var(--theme-textSecondary)] hover:text-[var(--theme-text)] hover:bg-[var(--theme-surfaceHover)] transition-colors duration-[var(--transition-fast)]"
-          aria-label="Naechster Monat"
+          aria-label="Nächster Monat"
         >
           <ChevronRight size={18} />
         </button>
@@ -179,10 +179,10 @@ export default function Calendar({
       {/* Legend */}
       <div className="flex flex-wrap gap-3 mt-4 pt-3 border-t border-[var(--theme-border)]">
         {[
-          { color: 'bg-[var(--color-success)]/15', label: 'Verfuegbar', text: 'text-[var(--color-success)]' },
+          { color: 'bg-[var(--color-success)]/15', label: 'Verfügbar', text: 'text-[var(--color-success)]' },
           { color: 'bg-[var(--theme-surfaceHover)]', label: 'Gesperrt', text: 'text-[var(--theme-textTertiary)]' },
           { color: 'bg-[var(--color-info)]/20', label: 'Gebucht', text: 'text-[var(--color-info)]' },
-          { color: 'bg-[var(--color-warning)]', label: 'Ausgewaehlt', text: 'text-white' },
+          { color: 'bg-[var(--color-warning)]', label: 'Ausgewählt', text: 'text-white' },
         ].map((item) => (
           <div key={item.label} className="flex items-center gap-1.5">
             <span className={`w-3 h-3 rounded-sm ${item.color}`} />
