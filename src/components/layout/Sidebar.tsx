@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
+import { LogOut } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import Logo from '@/components/icons/Logo'
 
@@ -16,6 +17,8 @@ export interface SidebarItem {
 interface SidebarProps {
   items: SidebarItem[]
   title: string
+  userEmail?: string
+  onSignOut?: () => void
 }
 
 function isActive(pathname: string, href: string): boolean {
@@ -28,7 +31,7 @@ function isActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(href + '/')
 }
 
-export default function Sidebar({ items, title }: SidebarProps) {
+export default function Sidebar({ items, title, userEmail, onSignOut }: SidebarProps) {
   const pathname = usePathname()
 
   return (
@@ -78,6 +81,28 @@ export default function Sidebar({ items, title }: SidebarProps) {
           )
         })}
       </nav>
+
+      {/* Bottom: User Email + Logout */}
+      {(userEmail || onSignOut) && (
+        <div className="border-t border-[var(--theme-border)] p-2 shrink-0">
+          {userEmail && (
+            <div className="hidden md:block px-3 py-2">
+              <p className="text-xs text-[var(--theme-textTertiary)] truncate" title={userEmail}>
+                {userEmail}
+              </p>
+            </div>
+          )}
+          {onSignOut && (
+            <button
+              onClick={onSignOut}
+              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-[var(--theme-textSecondary)] hover:bg-[var(--theme-surfaceHover)] hover:text-[var(--theme-text)] transition-colors"
+            >
+              <LogOut size={20} className="shrink-0" />
+              <span className="hidden md:block text-sm font-medium">Abmelden</span>
+            </button>
+          )}
+        </div>
+      )}
     </aside>
   )
 }

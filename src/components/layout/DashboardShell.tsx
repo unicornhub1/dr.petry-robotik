@@ -46,13 +46,14 @@ export default function DashboardShell({ children }: { children: React.ReactNode
     router.push('/login')
   }
 
-  const displayName = profile
-    ? [profile.first_name, profile.last_name].filter(Boolean).join(' ') || profile.email
-    : ''
-
   return (
     <div className="min-h-screen bg-[var(--theme-background)] flex">
-      <Sidebar items={customerNavItems} title="Kundenportal" />
+      <Sidebar
+        items={customerNavItems}
+        title="Kundenportal"
+        userEmail={profile?.email}
+        onSignOut={handleSignOut}
+      />
 
       {/* Main content offset for sidebar */}
       <div className="flex-1 flex flex-col ml-16 md:ml-64 min-w-0">
@@ -78,17 +79,6 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             <div className="flex items-center gap-2">
               <ThemeToggle />
               <NotificationBell />
-              {displayName && (
-                <span className="hidden md:block text-sm font-medium text-[var(--theme-text)] ml-2">
-                  {displayName}
-                </span>
-              )}
-              <button
-                onClick={handleSignOut}
-                className="ml-2 px-3 py-1.5 rounded-lg text-sm font-medium text-[var(--theme-textSecondary)] hover:bg-[var(--theme-surface)] hover:text-[var(--theme-text)] transition-colors border border-[var(--theme-border)]"
-              >
-                Abmelden
-              </button>
             </div>
           </div>
         </header>
