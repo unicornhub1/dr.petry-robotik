@@ -95,7 +95,7 @@ export default function OnboardingPage() {
         const { error } = await supabase.auth.signInWithOtp({
           email: formData.email.trim(),
           options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
+            emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || window.location.origin}/auth/callback`,
             data: {
               first_name: formData.firstName.trim(),
               last_name: formData.lastName.trim(),
@@ -139,7 +139,7 @@ export default function OnboardingPage() {
       await supabase.auth.signInWithOtp({
         email: formData.email.trim(),
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || window.location.origin}/auth/callback`,
           data: {
             first_name: formData.firstName.trim(),
             last_name: formData.lastName.trim(),

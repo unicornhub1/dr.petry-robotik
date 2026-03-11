@@ -386,7 +386,7 @@ export default function NotificationsPage() {
                   <div className="text-center px-6">
                     <MessageSquare size={32} className="mx-auto mb-3 text-[var(--theme-textTertiary)]" />
                     <p className="text-sm text-[var(--theme-textTertiary)]">
-                      Chat auswaehlen um die Konversation zu sehen
+                      Chat auswählen um die Konversation zu sehen
                     </p>
                   </div>
                 </div>

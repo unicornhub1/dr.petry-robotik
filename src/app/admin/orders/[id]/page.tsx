@@ -13,6 +13,7 @@ import { Card, Dropdown, Input, Textarea, StatusBadge, Modal, PriceDisplay, useT
 import ChatWindow from '@/components/chat/ChatWindow'
 import { useAuth } from '@/lib/auth/auth-context'
 import { createClient } from '@/lib/supabase/client'
+import { triggerEvent } from '@/lib/notifications/trigger'
 import type { Order, OrderStatus, Booking } from '@/lib/supabase/types'
 
 interface OrderDetail extends Order {
@@ -135,6 +136,15 @@ export default function AdminOrderDetailPage() {
     } else {
       success('Status aktualisiert')
       setOrder({ ...order, status: selectedStatus })
+
+      // Trigger appropriate notification event
+      if (selectedStatus === 'confirmed') {
+        triggerEvent('order_confirmed', { orderId: order.id })
+      } else if (selectedStatus === 'rejected') {
+        triggerEvent('order_rejected', { orderId: order.id })
+      } else {
+        triggerEvent('order_status_changed', { orderId: order.id, newStatus: selectedStatus })
+      }
     }
     setSavingStatus(false)
   }
@@ -172,6 +182,7 @@ export default function AdminOrderDetailPage() {
       success('Auftrag abgelehnt')
       setOrder({ ...order, status: 'rejected' })
       setSelectedStatus('rejected')
+      triggerEvent('order_rejected', { orderId: order.id })
     }
     setRejectModalOpen(false)
   }
@@ -389,7 +400,7 @@ export default function AdminOrderDetailPage() {
         {/* Right Column: Chat */}
         <div className="lg:col-span-1">
           <div className="sticky top-20 h-[600px]">
-            <ChatWindow orderId={orderId} />
+            <ChatWindow orderId={orderId} userRole="admin" />
           </div>
         </div>
       </div>

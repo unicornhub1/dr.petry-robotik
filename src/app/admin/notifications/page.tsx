@@ -390,7 +390,7 @@ export default function AdminNotificationsPage() {
                   </div>
                   <div className="flex-1 min-h-0">
                     {selectedChat.type === 'order' ? (
-                      <ChatWindow orderId={selectedChat.id} />
+                      <ChatWindow orderId={selectedChat.id} userRole="admin" />
                     ) : (
                       <DirectChatWindow recipientId={selectedChat.id} />
                     )}

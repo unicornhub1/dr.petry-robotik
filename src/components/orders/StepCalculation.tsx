@@ -11,6 +11,25 @@ interface StepCalculationProps {
   packages: Package[]
   pricingRules: PricingRule[]
   isApproved: boolean
+  extraDays: number
+  baseDuration: number
+}
+
+/**
+ * Calculate duration surcharge (non-linear increase per extra day).
+ * 1st extra day: 35% of subtotal
+ * 2nd extra day: 40% of subtotal
+ * 3rd extra day: 45% of subtotal
+ * Each subsequent: +5% more
+ */
+export function calculateDurationSurcharge(subtotal: number, extraDays: number): number {
+  if (extraDays <= 0) return 0
+  let surcharge = 0
+  for (let i = 0; i < extraDays; i++) {
+    const rate = 0.35 + i * 0.05
+    surcharge += Math.round(subtotal * rate)
+  }
+  return surcharge
 }
 
 export default function StepCalculation({
@@ -20,6 +39,8 @@ export default function StepCalculation({
   packages,
   pricingRules,
   isApproved,
+  extraDays,
+  baseDuration,
 }: StepCalculationProps) {
   const selectedFacilities = facilities.filter((f) =>
     selectedFacilityIds.includes(f.id)
@@ -47,7 +68,10 @@ export default function StepCalculation({
 
   const subtotal = lineItems.reduce((sum, item) => sum + item.price, 0)
   const discountAmount = Math.round(subtotal * (discountPercent / 100))
-  const total = subtotal - discountAmount
+  const afterDiscount = subtotal - discountAmount
+  const durationSurcharge = calculateDurationSurcharge(afterDiscount, extraDays)
+  const total = afterDiscount + durationSurcharge
+  const totalDuration = baseDuration + extraDays
 
   return (
     <div className="space-y-4">
@@ -76,7 +100,7 @@ export default function StepCalculation({
           ))}
         </div>
 
-        {/* Subtotal + Discount */}
+        {/* Subtotal + Discount + Duration Surcharge */}
         <div className="border-t border-[var(--theme-border)] bg-[var(--theme-surfaceHover)]">
           <div className="flex items-center justify-between p-4">
             <span className="text-sm text-[var(--theme-textSecondary)]">Zwischensumme</span>
@@ -90,6 +114,22 @@ export default function StepCalculation({
               </span>
               <span className="text-sm text-[var(--color-success)]">
                 {isApproved ? `-${(discountAmount / 100).toLocaleString('de-DE', { minimumFractionDigits: 2 })} EUR` : '---,-- EUR'}
+              </span>
+            </div>
+          )}
+
+          {extraDays > 0 && (
+            <div className="flex items-center justify-between px-4 pb-4">
+              <div>
+                <span className="text-sm text-[var(--color-warning)]">
+                  Verlängerung (+{extraDays} {extraDays === 1 ? 'Tag' : 'Tage'})
+                </span>
+                <p className="text-xs text-[var(--theme-textTertiary)]">
+                  Gesamt: {totalDuration} Tage Messdauer
+                </p>
+              </div>
+              <span className="text-sm text-[var(--color-warning)]">
+                {isApproved ? `+${(durationSurcharge / 100).toLocaleString('de-DE', { minimumFractionDigits: 2 })} EUR` : '---,-- EUR'}
               </span>
             </div>
           )}

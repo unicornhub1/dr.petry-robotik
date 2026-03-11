@@ -10,13 +10,20 @@ import { useAuth } from '@/lib/auth/auth-context'
 import { createClient } from '@/lib/supabase/client'
 import type { Package, PricingRule } from '@/lib/supabase/types'
 
+import { triggerEvent } from '@/lib/notifications/trigger'
 import StepSelectFacilities from '@/components/orders/StepSelectFacilities'
 import type { FacilityWithType } from '@/components/orders/StepSelectFacilities'
 import StepSelectPackages from '@/components/orders/StepSelectPackages'
 import StepSelectDate from '@/components/orders/StepSelectDate'
-import StepCalculation from '@/components/orders/StepCalculation'
+import StepCalculation, { calculateDurationSurcharge } from '@/components/orders/StepCalculation'
 import StepIndividualRequest from '@/components/orders/StepIndividualRequest'
 import StepSummary from '@/components/orders/StepSummary'
+
+function getBaseDuration(facilityCount: number): number {
+  if (facilityCount >= 10) return 3
+  if (facilityCount >= 5) return 2
+  return 1
+}
 
 export default function NewOrderPage() {
   const { user, isApproved } = useAuth()
@@ -34,10 +41,13 @@ export default function NewOrderPage() {
   const [selectedFacilityIds, setSelectedFacilityIds] = useState<string[]>([])
   const [packageSelections, setPackageSelections] = useState<Record<string, string>>({})
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [extraDays, setExtraDays] = useState(0)
   const [notes, setNotes] = useState('')
   const [agbAccepted, setAgbAccepted] = useState(false)
 
   const isIndividual = selectedFacilityIds.length > 3
+  const baseDuration = getBaseDuration(selectedFacilityIds.length)
+  const totalDuration = baseDuration + extraDays
 
   useEffect(() => {
     if (!user) return
@@ -102,8 +112,8 @@ export default function NewOrderPage() {
     setPackageSelections((prev) => ({ ...prev, [facilityId]: packageId }))
   }
 
-  // Calculate total
-  const { totalPrice, discountPercent } = useMemo(() => {
+  // Calculate total (including duration surcharge)
+  const { totalPrice, discountPercent, durationSurcharge } = useMemo(() => {
     const count = selectedFacilityIds.length
     const rule = pricingRules.find(
       (r) =>
@@ -119,8 +129,14 @@ export default function NewOrderPage() {
     }, 0)
 
     const discountAmount = Math.round(subtotal * (discount / 100))
-    return { totalPrice: subtotal - discountAmount, discountPercent: discount }
-  }, [selectedFacilityIds, packageSelections, packages, pricingRules])
+    const afterDiscount = subtotal - discountAmount
+    const surcharge = calculateDurationSurcharge(afterDiscount, extraDays)
+    return {
+      totalPrice: afterDiscount + surcharge,
+      discountPercent: discount,
+      durationSurcharge: surcharge,
+    }
+  }, [selectedFacilityIds, packageSelections, packages, pricingRules, extraDays])
 
   const canProceed = (): boolean => {
     switch (currentStep) {
@@ -202,16 +218,31 @@ export default function NewOrderPage() {
 
     // Create booking if not individual
     if (!isIndividual && selectedDate) {
+      const durationHours = totalDuration * 10 // 10h per day (08:00 - 18:00)
+
+      // Calculate end date for multi-day bookings
+      const endDate = new Date(selectedDate + 'T00:00:00')
+      endDate.setDate(endDate.getDate() + totalDuration - 1)
+
       const { error: bookingError } = await supabase.from('bookings').insert({
         order_id: order.id,
         date: selectedDate,
         start_time: '08:00',
         end_time: '18:00',
+        duration_hours: durationHours,
+        duration_surcharge: durationSurcharge > 0 ? durationSurcharge : null,
       })
 
       if (bookingError) {
         toast.warning('Auftrag erstellt, aber Terminbuchung fehlgeschlagen.')
       }
+    }
+
+    // Trigger notification events
+    if (isIndividual) {
+      triggerEvent('individual_request', { orderId: order.id })
+    } else {
+      triggerEvent('order_received', { orderId: order.id })
     }
 
     setSubmitting(false)
@@ -272,6 +303,8 @@ export default function NewOrderPage() {
               selectedDate={null}
               totalPrice={totalPrice}
               discountPercent={discountPercent}
+              durationDays={totalDuration}
+              durationSurcharge={0}
               isIndividual
               notes={notes}
               isApproved={isApproved}
@@ -311,6 +344,9 @@ export default function NewOrderPage() {
           <StepSelectDate
             selectedDate={selectedDate}
             onSelect={setSelectedDate}
+            facilityCount={selectedFacilityIds.length}
+            extraDays={extraDays}
+            onExtraDaysChange={setExtraDays}
           />
         )
       case 3:
@@ -322,6 +358,8 @@ export default function NewOrderPage() {
             packages={packages}
             pricingRules={pricingRules}
             isApproved={isApproved}
+            extraDays={extraDays}
+            baseDuration={baseDuration}
           />
         )
       case 4:
@@ -334,6 +372,8 @@ export default function NewOrderPage() {
             selectedDate={selectedDate}
             totalPrice={totalPrice}
             discountPercent={discountPercent}
+            durationDays={totalDuration}
+            durationSurcharge={durationSurcharge}
             isIndividual={false}
             notes={notes}
             isApproved={isApproved}

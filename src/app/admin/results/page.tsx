@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { BarChart3, Trash2, Save, FileText } from 'lucide-react'
 import { Dropdown, Textarea, FileUpload, EmptyState, useToast } from '@/components/ui'
 import { createClient } from '@/lib/supabase/client'
+import { triggerEvent } from '@/lib/notifications/trigger'
 import type { Order, Result, ResultFile, Json } from '@/lib/supabase/types'
 
 interface OrderOption {
@@ -220,23 +221,9 @@ export default function AdminResultsPage() {
         .eq('id', result.id)
     }
 
-    // Get order owner
-    const { data: order } = await supabase
-      .from('orders')
-      .select('user_id, order_number')
-      .eq('id', selectedOrderId)
-      .single()
-
-    if (order) {
-      // Create notification
-      await supabase.from('notifications').insert({
-        user_id: order.user_id,
-        type: 'result_ready',
-        title: 'Ergebnisse verfügbar',
-        body: `Die Ergebnisse für Auftrag ${order.order_number} sind jetzt verfügbar.`,
-        link: `/dashboard/results/${selectedOrderId}`,
-        is_read: false,
-      })
+    // Trigger notification + email for each result
+    for (const result of results) {
+      triggerEvent('results_available', { resultId: result.id })
     }
 
     setSaving(false)

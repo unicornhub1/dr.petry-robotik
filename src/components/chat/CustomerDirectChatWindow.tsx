@@ -190,7 +190,7 @@ export default function CustomerDirectChatWindow() {
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
             className="p-2 rounded-lg text-[var(--theme-textSecondary)] hover:text-[var(--theme-text)] hover:bg-[var(--theme-surfaceHover)] transition-colors shrink-0"
-            title="Datei anhaengen"
+            title="Datei anhängen"
           >
             {uploading ? (
               <Loader2 size={18} className="animate-spin" />

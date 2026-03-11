@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { Card, Badge, useToast } from '@/components/ui'
 import { createClient } from '@/lib/supabase/client'
+import { triggerEvent } from '@/lib/notifications/trigger'
 import type { Profile } from '@/lib/supabase/types'
 
 const accountTypeLabels: Record<string, string> = {
@@ -86,6 +87,7 @@ export default function AdminUserDetailPage() {
     } else {
       success('Nutzer erfolgreich freigegeben')
       setProfile({ ...profile, is_approved: true })
+      triggerEvent('account_approved', { userId: profile.id })
     }
     setActionLoading(false)
   }
@@ -105,6 +107,7 @@ export default function AdminUserDetailPage() {
     } else {
       success('Nutzer gesperrt')
       setProfile({ ...profile, is_approved: false })
+      triggerEvent('account_suspended', { userId: profile.id })
     }
     setActionLoading(false)
   }

@@ -8,6 +8,7 @@ interface CalendarProps {
   blockedDates: string[]
   bookedDates: string[]
   selectedDate: string | null
+  highlightedDates?: string[]
   onSelect: (date: string) => void
   month: Date
   onMonthChange: (date: Date) => void
@@ -47,6 +48,7 @@ export default function Calendar({
   blockedDates,
   bookedDates,
   selectedDate,
+  highlightedDates = [],
   onSelect,
   month,
   onMonthChange,
@@ -71,6 +73,14 @@ export default function Calendar({
         text: 'text-white',
         label: 'Ausgewählt',
         clickable: true,
+      }
+    }
+    if (highlightedDates.includes(dateStr)) {
+      return {
+        bg: 'bg-[var(--color-warning)]/40',
+        text: 'text-[var(--theme-text)]',
+        label: 'Messungszeitraum',
+        clickable: false,
       }
     }
     if (bookedDates.includes(dateStr)) {
@@ -183,6 +193,9 @@ export default function Calendar({
           { color: 'bg-[var(--theme-surfaceHover)]', label: 'Gesperrt', text: 'text-[var(--theme-textTertiary)]' },
           { color: 'bg-[var(--color-info)]/20', label: 'Gebucht', text: 'text-[var(--color-info)]' },
           { color: 'bg-[var(--color-warning)]', label: 'Ausgewählt', text: 'text-white' },
+          ...(highlightedDates.length > 0
+            ? [{ color: 'bg-[var(--color-warning)]/40', label: 'Messzeitraum', text: 'text-[var(--theme-text)]' }]
+            : []),
         ].map((item) => (
           <div key={item.label} className="flex items-center gap-1.5">
             <span className={`w-3 h-3 rounded-sm ${item.color}`} />

@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { MapPin, Package as PackageIcon, Calendar, FileText } from 'lucide-react'
+import { MapPin, Package as PackageIcon, Calendar, FileText, Clock } from 'lucide-react'
 import { PriceDisplay, Button } from '@/components/ui'
 import type { Package } from '@/lib/supabase/types'
 import type { FacilityWithType } from './StepSelectFacilities'
@@ -14,6 +14,8 @@ interface StepSummaryProps {
   selectedDate: string | null
   totalPrice: number
   discountPercent: number
+  durationDays: number
+  durationSurcharge: number
   isIndividual: boolean
   notes: string
   isApproved: boolean
@@ -31,6 +33,8 @@ export default function StepSummary({
   selectedDate,
   totalPrice,
   discountPercent,
+  durationDays,
+  durationSurcharge,
   isIndividual,
   notes,
   isApproved,
@@ -86,7 +90,7 @@ export default function StepSummary({
         </div>
       </motion.div>
 
-      {/* Date */}
+      {/* Date + Duration */}
       {!isIndividual && selectedDate && (
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -94,18 +98,60 @@ export default function StepSummary({
           transition={{ delay: 0.1 }}
           className="bg-[var(--theme-surface)] rounded-xl p-5 border border-[var(--theme-border)]"
         >
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-3">
             <Calendar size={16} className="text-[var(--theme-textSecondary)]" />
             <h3 className="text-sm font-semibold text-[var(--theme-text)]">Wunschtermin</h3>
           </div>
-          <p className="text-sm text-[var(--theme-text)]">
-            {new Date(selectedDate + 'T00:00:00').toLocaleDateString('de-DE', {
-              weekday: 'long',
-              day: '2-digit',
-              month: 'long',
-              year: 'numeric',
-            })}
-          </p>
+          <div className="space-y-2">
+            {durationDays > 1 ? (
+              <>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-[var(--theme-textSecondary)]">Startdatum</span>
+                  <span className="text-sm text-[var(--theme-text)]">
+                    {new Date(selectedDate + 'T00:00:00').toLocaleDateString('de-DE', {
+                      weekday: 'short',
+                      day: '2-digit',
+                      month: 'long',
+                      year: 'numeric',
+                    })}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-[var(--theme-textSecondary)]">Enddatum</span>
+                  <span className="text-sm text-[var(--theme-text)]">
+                    {(() => {
+                      const endDate = new Date(selectedDate + 'T00:00:00')
+                      endDate.setDate(endDate.getDate() + durationDays - 1)
+                      return endDate.toLocaleDateString('de-DE', {
+                        weekday: 'short',
+                        day: '2-digit',
+                        month: 'long',
+                        year: 'numeric',
+                      })
+                    })()}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-[var(--theme-border)]">
+                  <div className="flex items-center gap-1.5">
+                    <Clock size={14} className="text-[var(--accent-primary)]" />
+                    <span className="text-sm font-medium text-[var(--theme-text)]">Messdauer</span>
+                  </div>
+                  <span className="text-sm font-semibold text-[var(--accent-primary)]">
+                    {durationDays} Tage
+                  </span>
+                </div>
+              </>
+            ) : (
+              <p className="text-sm text-[var(--theme-text)]">
+                {new Date(selectedDate + 'T00:00:00').toLocaleDateString('de-DE', {
+                  weekday: 'long',
+                  day: '2-digit',
+                  month: 'long',
+                  year: 'numeric',
+                })}
+              </p>
+            )}
+          </div>
         </motion.div>
       )}
 
@@ -139,6 +185,11 @@ export default function StepSummary({
               {discountPercent > 0 && (
                 <p className="text-xs text-[var(--color-success)]">
                   inkl. {discountPercent}% Mengenrabatt
+                </p>
+              )}
+              {durationSurcharge > 0 && (
+                <p className="text-xs text-[var(--color-warning)]">
+                  inkl. Verlängerungsaufpreis
                 </p>
               )}
             </div>

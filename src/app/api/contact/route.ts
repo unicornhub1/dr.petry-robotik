@@ -107,17 +107,18 @@ export async function POST(request: NextRequest) {
       </html>
     `
 
-    // Send email (uncomment in production)
-    // await transporter.sendMail({
-    //   from: `"Petry Robotik" <${process.env.EMAIL_FROM}>`,
-    //   to: process.env.EMAIL_TO,
-    //   replyTo: body.email,
-    //   subject: `Neue Kontaktanfrage: ${interestLabels[body.interest] || body.interest}`,
-    //   html: htmlContent,
-    // })
-
-    // For development, just log the data
-    console.log('Contact form submission:', body)
+    // Send email
+    if (process.env.SMTP_HOST && process.env.EMAIL_TO) {
+      await transporter.sendMail({
+        from: `"Petry Robotik" <${process.env.EMAIL_FROM}>`,
+        to: process.env.EMAIL_TO,
+        replyTo: body.email,
+        subject: `Neue Kontaktanfrage: ${interestLabels[body.interest] || body.interest}`,
+        html: htmlContent,
+      })
+    } else {
+      console.log('Contact form submission (SMTP not configured):', body)
+    }
 
     return NextResponse.json({
       success: true,

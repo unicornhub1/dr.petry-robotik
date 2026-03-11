@@ -3,15 +3,17 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Send, Paperclip, Loader2, ClipboardList } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { triggerEvent } from '@/lib/notifications/trigger'
 import { useAuth } from '@/lib/auth/auth-context'
 import type { Message } from '@/lib/supabase/types'
 import ChatBubble from './ChatBubble'
 
 interface ChatWindowProps {
   orderId: string
+  userRole?: 'customer' | 'admin'
 }
 
-export default function ChatWindow({ orderId }: ChatWindowProps) {
+export default function ChatWindow({ orderId, userRole = 'customer' }: ChatWindowProps) {
   const { user } = useAuth()
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
@@ -65,12 +67,13 @@ export default function ChatWindow({ orderId }: ChatWindowProps) {
     }
   }, [orderId])
 
-  // Mark messages as read
+  // Mark messages as read (based on user role)
   useEffect(() => {
     if (!user || messages.length === 0) return
 
+    const readField = userRole === 'admin' ? 'admin_read_at' : 'customer_read_at'
     const unreadMessages = messages.filter(
-      (m) => m.sender_id !== user.id && !m.customer_read_at
+      (m) => m.sender_id !== user.id && !m[readField]
     )
 
     if (unreadMessages.length === 0) return
@@ -79,14 +82,14 @@ export default function ChatWindow({ orderId }: ChatWindowProps) {
       const supabase = createClient()
       await supabase
         .from('messages')
-        .update({ customer_read_at: new Date().toISOString() })
+        .update({ [readField]: new Date().toISOString() })
         .eq('order_id', orderId)
         .neq('sender_id', user.id)
-        .is('customer_read_at', null)
+        .is(readField, null)
     }
 
     markAsRead()
-  }, [messages, user, orderId])
+  }, [messages, user, orderId, userRole])
 
   // Auto-scroll on new messages
   useEffect(() => {
@@ -98,15 +101,18 @@ export default function ChatWindow({ orderId }: ChatWindowProps) {
     setSending(true)
 
     const supabase = createClient()
-    const { error } = await supabase.from('messages').insert({
+    const { data: inserted, error } = await supabase.from('messages').insert({
       order_id: orderId,
       sender_id: user.id,
       content: newMessage.trim(),
       type: 'text',
-    })
+    }).select('id').single()
 
     if (!error) {
       setNewMessage('')
+      if (inserted) {
+        triggerEvent('new_message', { messageId: inserted.id })
+      }
     }
     setSending(false)
   }
@@ -138,14 +144,18 @@ export default function ChatWindow({ orderId }: ChatWindowProps) {
       .from('chat-files')
       .getPublicUrl(filePath)
 
-    await supabase.from('messages').insert({
+    const { data: fileMsg } = await supabase.from('messages').insert({
       order_id: orderId,
       sender_id: user.id,
       content: file.name,
       type: 'file',
       file_url: urlData.publicUrl,
       file_name: file.name,
-    })
+    }).select('id').single()
+
+    if (fileMsg) {
+      triggerEvent('new_message', { messageId: fileMsg.id })
+    }
 
     setUploading(false)
   }
@@ -176,7 +186,7 @@ export default function ChatWindow({ orderId }: ChatWindowProps) {
             content={msg.content}
             type={msg.type}
             isSelf={msg.sender_id === user?.id}
-            senderName={msg.sender_id === user?.id ? 'Sie' : 'Petry Robotik'}
+            senderName={msg.sender_id === user?.id ? 'Sie' : (userRole === 'admin' ? 'Kunde' : 'Petry Robotik')}
             timestamp={msg.created_at}
             fileUrl={msg.file_url}
             fileName={msg.file_name}
@@ -193,7 +203,7 @@ export default function ChatWindow({ orderId }: ChatWindowProps) {
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
             className="p-2 rounded-lg text-[var(--theme-textSecondary)] hover:text-[var(--theme-text)] hover:bg-[var(--theme-surfaceHover)] transition-colors shrink-0"
-            title="Datei anhaengen"
+            title="Datei anhängen"
           >
             {uploading ? (
               <Loader2 size={18} className="animate-spin" />
