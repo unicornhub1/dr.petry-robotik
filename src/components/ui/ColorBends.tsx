@@ -131,10 +131,11 @@ export default function ColorBends({
   quality = 'medium',
 }: ColorBendsProps) {
   // Quality settings
+  const dpr = typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1
   const qualitySettings = {
     low: { pixelRatio: 1, targetFPS: 30 },
-    medium: { pixelRatio: Math.min(1.5, window.devicePixelRatio || 1), targetFPS: 45 },
-    high: { pixelRatio: Math.min(2, window.devicePixelRatio || 1), targetFPS: 60 },
+    medium: { pixelRatio: Math.min(1.5, dpr), targetFPS: 45 },
+    high: { pixelRatio: Math.min(2, dpr), targetFPS: 60 },
   }
   const settings = qualitySettings[quality]
   const containerRef = useRef<HTMLDivElement | null>(null)

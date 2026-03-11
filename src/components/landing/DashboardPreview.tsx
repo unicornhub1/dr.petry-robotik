@@ -1,9 +1,12 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { motion } from 'framer-motion'
 import { BarChart3, Download, FolderOpen, TrendingUp, Clock, CheckCircle, Zap } from 'lucide-react'
 import Button from '@/components/ui/Button'
-import { Container, Badge, SplitText, LiquidEther, FloatingBadge } from '@/components/ui'
+import { Container, Badge, SplitText, FloatingBadge } from '@/components/ui'
+
+const LiquidEther = dynamic(() => import('@/components/ui/LiquidEther'), { ssr: false })
 
 const features = [
   { icon: BarChart3, text: 'Echtzeit-Messwerte und Grafiken' },

@@ -54,7 +54,7 @@ export default function SplitText({
     },
   }
 
-  const Tag = tag as keyof JSX.IntrinsicElements
+  const Tag = tag as React.ElementType
 
   return (
     <Tag ref={ref} className={className}>

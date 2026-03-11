@@ -1,5 +1,6 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { motion } from 'framer-motion'
 import {
   Bot,
@@ -16,7 +17,10 @@ import {
   Zap,
 } from 'lucide-react'
 import Button from '@/components/ui/Button'
-import { Container, Badge, SplitText, FloatingBadge, ColorBends, GridMotion } from '@/components/ui'
+import { Container, Badge, SplitText, FloatingBadge } from '@/components/ui'
+
+const ColorBends = dynamic(() => import('@/components/ui/ColorBends'), { ssr: false })
+const GridMotion = dynamic(() => import('@/components/ui/GridMotion'), { ssr: false })
 
 const specifications = [
   { icon: Ruler, label: 'Abmessungen', value: '60 x 45 x 35 cm' },

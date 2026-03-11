@@ -1,9 +1,12 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { motion } from 'framer-motion'
 import { Bot, Radio, Gauge, Clock, Wifi, MapPin, Zap, Shield } from 'lucide-react'
 import Button from '@/components/ui/Button'
-import { Badge, Container, ColorBends, SplitText, FloatingBadge } from '@/components/ui'
+import { Badge, Container, SplitText, FloatingBadge } from '@/components/ui'
+
+const ColorBends = dynamic(() => import('@/components/ui/ColorBends'), { ssr: false })
 
 export default function Hero() {
   return (

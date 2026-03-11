@@ -592,7 +592,7 @@ export default function LiquidEther({
         this.camera = new THREE.Camera()
         if (this.uniforms) {
           this.material = new THREE.RawShaderMaterial(
-            this.props.material as THREE.RawShaderMaterialParameters
+            this.props.material as THREE.ShaderMaterialParameters
           )
           this.geometry = new THREE.PlaneGeometry(2, 2)
           this.plane = new THREE.Mesh(this.geometry, this.material)
